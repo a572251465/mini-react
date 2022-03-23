@@ -23,6 +23,8 @@ function updateProps(dom, oldProps = {}, newProps = {}) {
       for (const attr in styleObj) {
         dom.style[attr] = styleObj[attr]
       }
+    } else if (/^on.*/.test(item)) {
+      dom[item.toLowerCase()] = newProps[item]
     } else {
       dom[item] = newProps[item]
     }
@@ -53,10 +55,11 @@ function resolveChildren(childrens = [], dom) {
  * @param vdom 虚拟dom
  */
 function mountClassComponent(vdom) {
-  const {type, props} = vdom
+  const { type, props } = vdom
   const classInstance = new type(props)
   const renderVdom = classInstance.render()
   const realDom = createDom(renderVdom)
+  classInstance.oldRenderVdom = renderVdom
   return realDom
 }
 
@@ -66,9 +69,10 @@ function mountClassComponent(vdom) {
  * @param vdom
  */
 function mountFunctionComponent(vdom) {
-  const {type, props} = vdom
+  const { type, props } = vdom
   const renderVdom = type(props)
   const realDom = createDom(renderVdom)
+  vdom.oldRenderVdom = renderVdom
   return realDom
 }
 
@@ -107,6 +111,8 @@ function createDom(vdom) {
     }
   }
 
+  // 将真实dom 挂载到虚拟dom上
+  vdom.dom = dom
   return dom
 }
 
@@ -119,6 +125,35 @@ function createDom(vdom) {
 function render(vdom, container) {
   const dom = createDom(vdom)
   container.appendChild(dom)
+}
+
+/**
+ * @author lihh
+ * @description 通过虚拟dom 寻找真实dom
+ * @param vdom 虚拟dom
+ * @returns {*}
+ */
+export function findDom(vdom) {
+  if (!vdom) return
+  if (vdom.dom) {
+    return vdom.dom
+  } else {
+    const oldRenderVdom = vdom.oldRenderVdom
+    return findDom(oldRenderVdom)
+  }
+}
+
+/**
+ * @author lihh
+ * @description 新旧dom的比较
+ * @param parentDom 真实dom父类节点
+ * @param oldVdom 老虚拟dom
+ * @param newVdom 真的虚拟dom
+ */
+export function compareTwoVdom(parentDom, oldVdom, newVdom) {
+  const oldDom = findDom(oldVdom)
+  const newDom = createDom(newVdom)
+  parentDom.replaceChild(newDom, oldDom)
 }
 
 const ReactDom = { render }
