@@ -3,7 +3,7 @@
  * @description 通过虚拟dom 生成真实dom
  * @param vdom 虚拟dom
  */
-import {reactText} from "../utils/constant";
+import { classComponentFlag, reactText } from '../utils/constant'
 
 /**
  * @author lihh
@@ -14,7 +14,7 @@ import {reactText} from "../utils/constant";
  */
 function updateProps(dom, oldProps = {}, newProps = {}) {
   if (typeof oldProps !== 'object' || typeof newProps !== 'object') return
-  
+
   for (const item in newProps) {
     if (item === 'children') continue
 
@@ -42,9 +42,34 @@ function updateProps(dom, oldProps = {}, newProps = {}) {
  * @param dom 表示真实dom
  */
 function resolveChildren(childrens = [], dom) {
-  childrens.forEach(children => {
+  childrens.forEach((children) => {
     render(children, dom)
   })
+}
+
+/**
+ * @author lihh
+ * @description 挂载类组件
+ * @param vdom 虚拟dom
+ */
+function mountClassComponent(vdom) {
+  const {type, props} = vdom
+  const classInstance = new type(props)
+  const renderVdom = classInstance.render()
+  const realDom = createDom(renderVdom)
+  return realDom
+}
+
+/**
+ * @author lihh
+ * @description 进行函数挂载
+ * @param vdom
+ */
+function mountFunctionComponent(vdom) {
+  const {type, props} = vdom
+  const renderVdom = type(props)
+  const realDom = createDom(renderVdom)
+  return realDom
 }
 
 /**
@@ -54,11 +79,18 @@ function resolveChildren(childrens = [], dom) {
  * @returns {Text}
  */
 function createDom(vdom) {
-  const {type, props} = vdom
+  const { type, props } = vdom
   let dom
 
   if (type === reactText) {
     dom = document.createTextNode(props)
+  } else if (typeof type === 'function') {
+    // 判断是函数组件 还是类组件
+    if (type.isClassComponent === classComponentFlag) {
+      return mountClassComponent(vdom)
+    } else {
+      return mountFunctionComponent(vdom)
+    }
   } else {
     dom = document.createElement(type)
   }
@@ -89,5 +121,5 @@ function render(vdom, container) {
   container.appendChild(dom)
 }
 
-const ReactDom = {render}
+const ReactDom = { render }
 export default ReactDom
