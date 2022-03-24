@@ -100,6 +100,12 @@ class Updater {
   }
 }
 
+function createRef() {
+  return {
+    current: null
+  }
+}
+
 class Component {
   static isClassComponent = classComponentFlag
   constructor(props) {
@@ -123,6 +129,7 @@ class Component {
 
 const React = {
   createElement,
+  createRef,
   Component
 }
 export default React

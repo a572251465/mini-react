@@ -88,7 +88,7 @@ function mountFunctionComponent(vdom) {
  * @returns {Text}
  */
 function createDom(vdom) {
-  const { type, props } = vdom
+  const { type, props, ref } = vdom
   let dom
 
   if (type === reactText) {
@@ -108,7 +108,7 @@ function createDom(vdom) {
     updateProps(dom, {}, props)
   }
 
-  if (props.children) {
+  if (props && props.children) {
     if (!Array.isArray(props.children)) {
       render(props.children, dom)
     } else {
@@ -118,6 +118,11 @@ function createDom(vdom) {
 
   // 将真实dom 挂载到虚拟dom上
   vdom.dom = dom
+
+  // ref直接绑定dom
+  if (ref) {
+    ref.current = dom
+  }
   return dom
 }
 
