@@ -2,6 +2,22 @@ import { classComponentFlag, reactElement } from '../utils/constant'
 import { wrapStringToVdom } from '../utils'
 import { compareTwoVdom, findDom } from './react-dom'
 
+// 实现批量更新的逻辑
+export const updateQueue = {
+  // 是否更新中
+  isBatchingUpdate: false,
+  // 收集更新的updater
+  updaters: new Set(),
+  // 更新组件的函数
+  batchUpdate: function() {
+    this.isBatchingUpdate = false
+    for (const updater of this.updaters) {
+      updater.updateComponent()
+    }
+    this.updaters.clear()
+  }
+}
+
 function createElement(type, config, children) {
   let key, ref
   if (config) {
@@ -49,11 +65,15 @@ class Updater {
   }
 
   emitUpdate() {
-    this.updateComponent()
+    if (updateQueue.isBatchingUpdate) {
+      updateQueue.updaters.add(this)
+    } else {
+      this.updateComponent()
+    }
   }
 
   updateComponent() {
-    this.shouldUpdate()
+    if (this.stateStack.length > 0) this.shouldUpdate()
   }
 
   shouldUpdate() {

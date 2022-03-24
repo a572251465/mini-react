@@ -4,6 +4,7 @@
  * @param vdom 虚拟dom
  */
 import { classComponentFlag, reactText } from '../utils/constant'
+import addEvent from './event'
 
 /**
  * @author lihh
@@ -24,7 +25,11 @@ function updateProps(dom, oldProps = {}, newProps = {}) {
         dom.style[attr] = styleObj[attr]
       }
     } else if (/^on.*/.test(item)) {
-      dom[item.toLowerCase()] = newProps[item]
+      dom[item.toLowerCase()] = addEvent(
+        dom,
+        item.toLowerCase(),
+        newProps[item]
+      )
     } else {
       dom[item] = newProps[item]
     }
