@@ -31,10 +31,22 @@ function dispatchEvent(event) {
 
 function stopPropagationHandle() {
   this.isStopPropagation = true
+  const event = this.nativeEvent
+  if (event.stopPropagation) {
+    event.stopPropagation()
+  } else {
+    event.cancelBubble = true
+  }
 }
 
 function preventDefaultHandle() {
   this.isPreventDefault = true
+  const event = this.nativeEvent
+  if (event.preventDefault) {
+    event.preventDefault()
+  } else {
+    event.returnValue = false
+  }
 }
 
 /**
@@ -42,14 +54,15 @@ function preventDefaultHandle() {
  * @description 生成事件函数
  * @param event 事件对象本身
  */
-function createSynthesisEvent(event) {
+function createSynthesisEvent(nativeEvent) {
   const synthesisEvent = {}
-  for (const key in event) {
-    let value = event[key]
-    if (typeof value === 'function') value = value.bind(event)
+  for (const key in nativeEvent) {
+    let value = nativeEvent[key]
+    if (typeof value === 'function') value = value.bind(nativeEvent)
     synthesisEvent[key] = value
   }
 
+  synthesisEvent.nativeEvent = nativeEvent
   synthesisEvent.stopPropagation = stopPropagationHandle
   synthesisEvent.preventDefault = preventDefaultHandle
 
