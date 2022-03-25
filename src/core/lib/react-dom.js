@@ -3,7 +3,7 @@
  * @description 通过虚拟dom 生成真实dom
  * @param vdom 虚拟dom
  */
-import { classComponentFlag, reactText } from '../utils/constant'
+import { classComponentFlag, reactForwardRef, reactText } from '../utils/constant'
 import addEvent from './event'
 
 /**
@@ -60,8 +60,12 @@ function resolveChildren(childrens = [], dom) {
  * @param vdom 虚拟dom
  */
 function mountClassComponent(vdom) {
-  const { type, props } = vdom
+  const { type, props, ref } = vdom
   const classInstance = new type(props)
+  if (ref) {
+    ref.current = classInstance
+  }
+
   const renderVdom = classInstance.render()
   const realDom = createDom(renderVdom)
   classInstance.oldRenderVdom = renderVdom
@@ -83,15 +87,30 @@ function mountFunctionComponent(vdom) {
 
 /**
  * @author lihh
+ * @description 挂载forward 函数
+ * @param vdom 虚拟dom
+ */
+function mountForwardRefFunction(vdom) {
+  const {type, ref , props} = vdom
+  const renderVdom = type.render(props, ref)
+  vdom.oldRenderVdom = renderVdom
+  const dom = createDom(renderVdom)
+  return dom
+}
+
+/**
+ * @author lihh
  * @description 从虚拟dom 转换为真实的dom
  * @param vdom 虚拟dom
  * @returns {Text}
  */
 function createDom(vdom) {
-  const { type, props, ref } = vdom
+  const { type, props, ref, $$typeof } = vdom
   let dom
 
-  if (type === reactText) {
+  if (type && type.$$typeof === reactForwardRef) {
+    return mountForwardRefFunction(vdom)
+  } else if (type === reactText) {
     dom = document.createTextNode(props)
   } else if (typeof type === 'function') {
     // 判断是函数组件 还是类组件

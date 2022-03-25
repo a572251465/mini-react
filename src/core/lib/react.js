@@ -1,4 +1,8 @@
-import { classComponentFlag, reactElement } from '../utils/constant'
+import {
+  classComponentFlag,
+  reactElement,
+  reactForwardRef
+} from '../utils/constant'
 import { wrapStringToVdom } from '../utils'
 import { compareTwoVdom, findDom } from './react-dom'
 
@@ -9,7 +13,7 @@ export const updateQueue = {
   // 收集更新的updater
   updaters: new Set(),
   // 更新组件的函数
-  batchUpdate: function() {
+  batchUpdate: function () {
     this.isBatchingUpdate = false
     for (const updater of this.updaters) {
       updater.updateComponent()
@@ -127,9 +131,17 @@ class Component {
   }
 }
 
+function forwardRef(render) {
+  return {
+    $$typeof: reactForwardRef,
+    render
+  }
+}
+
 const React = {
   createElement,
   createRef,
-  Component
+  Component,
+  forwardRef
 }
 export default React
