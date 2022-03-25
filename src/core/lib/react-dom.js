@@ -66,9 +66,19 @@ function mountClassComponent(vdom) {
     ref.current = classInstance
   }
 
+  // componentWillMount 实现
+  if (classInstance.componentWillMount) {
+    classInstance.componentWillMount()
+  }
+
   const renderVdom = classInstance.render()
   const realDom = createDom(renderVdom)
   classInstance.oldRenderVdom = renderVdom
+
+  // componentDidMount 实现
+  if (classInstance.componentDidMount) {
+    realDom.componentDidMount = classInstance.componentDidMount.bind(classInstance)
+  }
   return realDom
 }
 
@@ -154,6 +164,11 @@ function createDom(vdom) {
 function render(vdom, container) {
   const dom = createDom(vdom)
   container.appendChild(dom)
+
+  // 声明周期函数componentDidMount 将在这里执行
+  if (dom.componentDidMount) {
+    dom.componentDidMount()
+  }
 }
 
 /**

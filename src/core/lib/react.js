@@ -81,13 +81,23 @@ class Updater {
   }
 
   shouldUpdate() {
+    let willUpdate = true
+
     const { instance } = this
+
+    if (instance.shouldComponentUpdate && !instance.shouldComponentUpdate()) {
+      willUpdate = false
+    }
+    
     instance.state = this.getState()
     if (this.callbacks.length > 0) {
       this.callbacks.forEach((fn) => fn())
       this.callbacks.length = 0
     }
-    instance.forceUpdate()
+
+    if (willUpdate) {
+      instance.forceUpdate()
+    }
   }
 
   getState() {
@@ -123,11 +133,21 @@ class Component {
   }
 
   forceUpdate() {
+    // 钩子componentWillUpdate执行位置
+    if (this.componentWillUpdate) {
+      this.componentWillUpdate()
+    }
+
     const oldRenderVdom = this.oldRenderVdom
     const oldDom = findDom(oldRenderVdom)
     const newRenderVdom = this.render()
     compareTwoVdom(oldDom.parentNode, oldRenderVdom, newRenderVdom)
     this.oldRenderVdom = newRenderVdom
+
+    // 钩子componentDidUpdate执行位置
+    if (this.componentDidUpdate) {
+      this.componentDidUpdate()
+    }
   }
 }
 

@@ -1,37 +1,52 @@
 import React from './react'
 import ReactDom from './react-dom'
 
-function FunctionComponent(props, forwardRef) {
-  return <input ref={forwardRef} value={props.title} />
-}
-const FunctionWrap = React.forwardRef(FunctionComponent)
-
-class ClassComponent extends React.Component {
+class Counter extends React.Component {
   constructor(props) {
     super(props)
-    this.a = React.createRef()
-    this.b = React.createRef()
-    this.result = React.createRef()
-    this.input = React.createRef()
+    this.state = {
+      number: 1
+    }
+    console.log(`counter 1. constructor`)
   }
 
-  addHandle = () => {
-    const a = this.a.current.value
-    const b = this.b.current.value
-    this.result.current.value = a + b
-    this.input.current.focus()
+  componentWillMount() {
+    console.log(`counter 2. componentWillMount`)
+  }
+
+  componentDidMount() {
+    console.log(`counter 4. componentDidMount`)
+  }
+
+  componentWillUpdate() {
+    console.log(`counter 6. componentWillUpdate`)
+  }
+
+  shouldComponentUpdate() {
+    console.log(`counter 5. shouldComponentUpdate`)
+    return this.state.number % 2 === 0
+  }
+
+  componentDidUpdate() {
+    console.log(`counter 7. componentDidUpdate`)
+  }
+
+  add = () => {
+    this.setState({
+      number: this.state.number + 1
+    })
   }
 
   render() {
+    console.log(`counter 3. render`)
     return (
       <div>
-        <FunctionWrap title="函数组件" ref={this.input} />
-        <input type="text" ref={this.a} /> + <input type="text" ref={this.b} />{' '}
-        <button onClick={this.addHandle}>=</button>
-        <input type="text" ref={this.result} />
+        <p>测试类的声明周期</p>
+        <p>{this.state.number}</p>
+        <button onClick={this.add}>变化按钮</button>
       </div>
     )
   }
 }
 
-ReactDom.render(<ClassComponent />, document.getElementById('root'))
+ReactDom.render(<Counter />, document.getElementById('root'))
