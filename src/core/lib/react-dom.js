@@ -6,6 +6,7 @@
 import {
   classComponentFlag,
   reactForwardRef,
+  reactFragment,
   reactText
 } from '../utils/constant'
 import addEvent from './event'
@@ -128,6 +129,8 @@ function createDom(vdom) {
     return mountForwardRefFunction(vdom)
   } else if (type === reactText) {
     dom = document.createTextNode(String(props) === 'null' ? '' : props)
+  } else if (type === reactFragment) {
+    dom = document.createDocumentFragment()
   } else if (typeof type === 'function') {
     // 判断是函数组件 还是类组件
     if (type.isClassComponent === classComponentFlag) {
@@ -302,7 +305,10 @@ function updateElement(oldVdom, newVdom) {
   }
 
   // 判断是否是普通的标签
-  if (typeof oldVdom.type === 'string') {
+  if (
+    typeof oldVdom.type === 'string' ||
+    oldVdom.type === reactFragment
+  ) {
     const currentDom = (newVdom.dom = findDom(oldVdom))
     updateProps(currentDom, oldVdom.props, newVdom.props)
     updateChildren(currentDom, oldVdom.props.children, newVdom.props.children)

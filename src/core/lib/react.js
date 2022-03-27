@@ -1,7 +1,8 @@
 import {
   classComponentFlag,
   reactElement,
-  reactForwardRef
+  reactForwardRef,
+  reactFragment
 } from '../utils/constant'
 import { wrapStringToVdom } from '../utils'
 import { compareTwoVdom, findDom } from './react-dom'
@@ -171,6 +172,7 @@ const React = {
   createElement,
   createRef,
   Component,
-  forwardRef
+  forwardRef,
+  Fragment: reactFragment
 }
 export default React
