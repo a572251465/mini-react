@@ -1,6 +1,25 @@
 import React from './react'
 import ReactDom from './react-dom'
 
+class Sub extends React.Component {
+  componentWillMount() {
+    console.log(`Sub 1. componentWillMount`)
+  }
+
+  componentDidMount() {
+    console.log(`Sub 3. componentDidMount`)
+  }
+
+  render() {
+    console.log(`Sub 2. render`)
+    return <div>我是子类{this.props.number}</div>
+  }
+
+  componentWillUnmount() {
+    console.log(`Sub 4. componentWillUnmount`)
+  }
+}
+
 class Counter extends React.Component {
   constructor(props) {
     super(props)
@@ -23,8 +42,7 @@ class Counter extends React.Component {
   }
 
   shouldComponentUpdate() {
-    console.log(`counter 5. shouldComponentUpdate`)
-    return this.state.number % 2 === 0
+    return true
   }
 
   componentDidUpdate() {
@@ -44,6 +62,9 @@ class Counter extends React.Component {
         <p>测试类的声明周期</p>
         <p>{this.state.number}</p>
         <button onClick={this.add}>变化按钮</button>
+        {this.state.number % 2 === 0 ? null : (
+          <Sub number={this.state.number} />
+        )}
       </div>
     )
   }

@@ -68,7 +68,8 @@ class Updater {
     this.emitUpdate()
   }
 
-  emitUpdate() {
+  emitUpdate(nextProps) {
+    this.nextProps = nextProps
     if (updateQueue.isBatchingUpdate) {
       updateQueue.updaters.add(this)
     } else {
@@ -77,19 +78,27 @@ class Updater {
   }
 
   updateComponent() {
-    if (this.stateStack.length > 0) this.shouldUpdate()
+    const { instance, stateStack, nextProps } = this
+    if (nextProps || stateStack.length > 0) {
+      this.shouldUpdate(instance, nextProps, this.getState())
+    }
   }
 
-  shouldUpdate() {
+  shouldUpdate(instance, nextProps, nextState) {
     let willUpdate = true
 
-    const { instance } = this
-
-    if (instance.shouldComponentUpdate && !instance.shouldComponentUpdate()) {
+    if (
+      instance.shouldComponentUpdate &&
+      !instance.shouldComponentUpdate(nextProps, nextState)
+    ) {
       willUpdate = false
     }
-    
-    instance.state = this.getState()
+
+    if (nextProps) {
+      instance.props = nextProps
+    }
+
+    instance.state = nextState
     if (this.callbacks.length > 0) {
       this.callbacks.forEach((fn) => fn())
       this.callbacks.length = 0

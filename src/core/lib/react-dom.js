@@ -3,7 +3,11 @@
  * @description 通过虚拟dom 生成真实dom
  * @param vdom 虚拟dom
  */
-import { classComponentFlag, reactForwardRef, reactText } from '../utils/constant'
+import {
+  classComponentFlag,
+  reactForwardRef,
+  reactText
+} from '../utils/constant'
 import addEvent from './event'
 
 /**
@@ -62,6 +66,7 @@ function resolveChildren(childrens = [], dom) {
 function mountClassComponent(vdom) {
   const { type, props, ref } = vdom
   const classInstance = new type(props)
+  vdom.classInstance = classInstance
   if (ref) {
     ref.current = classInstance
   }
@@ -77,7 +82,8 @@ function mountClassComponent(vdom) {
 
   // componentDidMount 实现
   if (classInstance.componentDidMount) {
-    realDom.componentDidMount = classInstance.componentDidMount.bind(classInstance)
+    realDom.componentDidMount =
+      classInstance.componentDidMount.bind(classInstance)
   }
   return realDom
 }
@@ -101,7 +107,7 @@ function mountFunctionComponent(vdom) {
  * @param vdom 虚拟dom
  */
 function mountForwardRefFunction(vdom) {
-  const {type, ref , props} = vdom
+  const { type, ref, props } = vdom
   const renderVdom = type.render(props, ref)
   vdom.oldRenderVdom = renderVdom
   const dom = createDom(renderVdom)
@@ -115,13 +121,13 @@ function mountForwardRefFunction(vdom) {
  * @returns {Text}
  */
 function createDom(vdom) {
-  const { type, props, ref, $$typeof } = vdom
+  const { type, props, ref } = vdom
   let dom
 
   if (type && type.$$typeof === reactForwardRef) {
     return mountForwardRefFunction(vdom)
   } else if (type === reactText) {
-    dom = document.createTextNode(props)
+    dom = document.createTextNode(String(props) === 'null' ? '' : props)
   } else if (typeof type === 'function') {
     // 判断是函数组件 还是类组件
     if (type.isClassComponent === classComponentFlag) {
@@ -182,8 +188,133 @@ export function findDom(vdom) {
   if (vdom.dom) {
     return vdom.dom
   } else {
-    const oldRenderVdom = vdom.oldRenderVdom
+    const oldRenderVdom = vdom.classInstance
+      ? vdom.classInstance.oldRenderVdom
+      : vdom.oldRenderVdom
     return findDom(oldRenderVdom)
+  }
+}
+
+/**
+ * @author lihh
+ * @description 进行dom的卸载
+ * @param {*} vdom 虚拟dom
+ */
+function unMountVdom(vdom) {
+  const { props, ref } = vdom
+  // 根据虚拟的dom 获取真实的dom
+  const currentDom = findDom(vdom)
+  // 判断是否存在生命钩子[componentWillUnmount]钩子
+  if (vdom.classInstance && vdom.classInstance.componentWillUnmount) {
+    vdom.classInstance.componentWillUnmount()
+  }
+
+  if (ref) ref.current = null
+
+  // 判断是否有children
+  if (props && props.children) {
+    const children = Array.isArray(props.children)
+      ? props.children
+      : [props.children]
+    children.forEach(unMountVdom)
+  }
+
+  if (currentDom) currentDom.remove()
+}
+
+/**
+ * @author lihh
+ * @description 进行子类children的更新
+ * @param {*} parentDom 父类的节点
+ * @param {*} oldVChildren 老的虚拟dom
+ * @param {*} newVChildren 新的虚拟dom
+ */
+function updateChildren(parentDom, oldVChildren, newVChildren) {
+  oldVChildren = (
+    Array.isArray(oldVChildren) ? oldVChildren : [oldVChildren]
+  ).filter((child) => child)
+  newVChildren = (
+    Array.isArray(newVChildren) ? newVChildren : [newVChildren]
+  ).filter((child) => child)
+
+  const max = Math.max(oldVChildren.length, newVChildren.length)
+  let i = 0
+
+  for (; i < max; i += 1) {
+    const nextVdom = oldVChildren.find(
+      (item, index) => index > i && item && findDom(item)
+    )
+    compareTwoVdom(
+      parentDom,
+      oldVChildren[i],
+      newVChildren[i],
+      nextVdom && findDom(nextVdom)
+    )
+  }
+}
+
+/**
+ * @author lihh
+ * @description 更新函数组件
+ * @param {*} oldVdom 老的虚拟dom
+ * @param {*} newVdom 新的虚拟dom
+ */
+function updateFunctionComponent(oldVdom, newVdom) {
+  const currentDom = findDom(oldVdom)
+  if (!currentDom) return
+
+  const parentNode = currentDom.parentNode
+  const { type, props } = newVdom
+  const newRenderVdom = type(props)
+  compareTwoVdom(parentNode, oldVdom.oldRenderVdom, newRenderVdom)
+  newVdom.oldRenderVdom = newRenderVdom
+}
+
+/**
+ * @author lihh
+ * @description 更新类组件
+ * @param {*} oldVdom
+ * @param {*} newVdom
+ */
+function updateClassComponent(oldVdom, newVdom) {
+  const classInstance = (newVdom.classInstance = oldVdom.classInstance)
+  if (classInstance.componentWillReceiveProps) {
+    classInstance.componentWillReceiveProps(newVdom.props)
+  }
+  classInstance.updater.emitUpdate(newVdom.props)
+}
+
+/**
+ * @author lihh
+ * @description 进行元素的更新比较
+ * @param {*} oldVdom 老的虚拟dom
+ * @param {*} newVdom 新的虚拟dom
+ */
+function updateElement(oldVdom, newVdom) {
+  // 首先判断是否是文本类型
+  if (oldVdom.type === reactText) {
+    const currentDom = (newVdom.dom = findDom(oldVdom))
+    if (oldVdom.props !== newVdom.props) {
+      currentDom.textContent =
+        String(newVdom.props) === 'null' ? '' : newVdom.props
+    }
+    return
+  }
+
+  // 判断是否是普通的标签
+  if (typeof oldVdom.type === 'string') {
+    const currentDom = (newVdom.dom = findDom(oldVdom))
+    updateProps(currentDom, oldVdom.props, newVdom.props)
+    updateChildren(currentDom, oldVdom.props.children, newVdom.props.children)
+    return
+  }
+
+  if (typeof oldVdom.type === 'function') {
+    if (oldVdom.type.isClassComponent) {
+      updateClassComponent(oldVdom, newVdom)
+    } else {
+      updateFunctionComponent(oldVdom, newVdom)
+    }
   }
 }
 
@@ -193,11 +324,45 @@ export function findDom(vdom) {
  * @param parentDom 真实dom父类节点
  * @param oldVdom 老虚拟dom
  * @param newVdom 真的虚拟dom
+ * @param nextDom 表示下一个dom 用来进行参照
  */
-export function compareTwoVdom(parentDom, oldVdom, newVdom) {
-  const oldDom = findDom(oldVdom)
-  const newDom = createDom(newVdom)
-  parentDom.replaceChild(newDom, oldDom)
+export function compareTwoVdom(parentDom, oldVdom, newVdom, nextDom) {
+  // 如果新旧dom都没有的话 直接返回
+  if (!oldVdom && !newVdom) return
+
+  // 如果老的dom有 但是新的dom没有的话
+  if (oldVdom && !newVdom) {
+    unMountVdom(oldVdom)
+    return
+  }
+
+  // 如果老的没有 && 新的有
+  if (!oldVdom && newVdom) {
+    const newDom = createDom(newVdom)
+    if (nextDom) {
+      parentDom.insertBefore(newDom, nextDom)
+    } else {
+      parentDom.appendChild(newDom)
+    }
+    if (newDom.componentDidMount) {
+      newDom.componentDidMount()
+    }
+    return
+  }
+
+  // 如果新的以及老的都有 但是类型不同
+  if (oldVdom && newVdom && oldVdom.type !== newVdom.type) {
+    const newDom = createDom(newVdom)
+    unMountVdom(oldVdom)
+    parentDom.appendChild(newDom)
+    if (newDom.componentDidMount) {
+      newDom.componentDidMount()
+    }
+    return
+  }
+
+  // 两个dom保持一致 比较属性
+  updateElement(oldVdom, newVdom)
 }
 
 const ReactDom = { render }
