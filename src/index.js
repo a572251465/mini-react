@@ -20,7 +20,7 @@ class Counter extends React.Component {
       <React.Fragment>
         <ul>
           {this.state.list.map((item, key) => (
-            <li key={key}>{item}</li>
+            <li key={item}>{item}</li>
           ))}
         </ul>
         <button onClick={this.handleClick}>变化</button>

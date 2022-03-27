@@ -5,6 +5,8 @@
  */
 import {
   classComponentFlag,
+  elementInsert,
+  elementMove,
   reactForwardRef,
   reactFragment,
   reactText
@@ -54,7 +56,8 @@ function updateProps(dom, oldProps = {}, newProps = {}) {
  * @param dom 表示真实dom
  */
 function resolveChildren(childrens = [], dom) {
-  childrens.forEach((children) => {
+  childrens.forEach((children, i) => {
+    children.mountIndex = i
     render(children, dom)
   })
 }
@@ -148,6 +151,7 @@ function createDom(vdom) {
 
   if (props && props.children) {
     if (!Array.isArray(props.children)) {
+      props.children.mountIndex = 0
       render(props.children, dom)
     } else {
       resolveChildren(props.children, dom)
@@ -240,20 +244,78 @@ function updateChildren(parentDom, oldVChildren, newVChildren) {
     Array.isArray(newVChildren) ? newVChildren : [newVChildren]
   ).filter((child) => child)
 
-  const max = Math.max(oldVChildren.length, newVChildren.length)
-  let i = 0
+  // 收集所有的旧dom 以及对应的key值
+  const keyedOldMap = {}
+  // 表示最后一个可以复用的元素
+  let lastPlacedIndex = 0
 
-  for (; i < max; i += 1) {
-    const nextVdom = oldVChildren.find(
-      (item, index) => index > i && item && findDom(item)
-    )
-    compareTwoVdom(
-      parentDom,
-      oldVChildren[i],
-      newVChildren[i],
-      nextVdom && findDom(nextVdom)
-    )
-  }
+  // 将所有的旧的元素中 key值对应的值以及value进行收集
+  oldVChildren.forEach((child, index) => {
+    const oldKey = child.key || index
+    keyedOldMap[oldKey] = child
+  })
+
+  // 表示补丁数组
+  const patch = []
+  newVChildren.forEach((newVChild, index) => {
+    newVChild.mountIndex = index
+    const newKey = newVChild.key || index
+
+    // 筛选新的dom 是否在旧的中间存在 是否可以直接复用
+    const oldChild = keyedOldMap[newKey]
+    if (oldChild) {
+      updateElement(oldChild, newVChild)
+      // 如果存在老的元素中 在lastPlacedIndex之前 表示元素需要移动
+      if (oldChild.mountIndex < lastPlacedIndex) {
+        patch.push({
+          type: elementMove,
+          oldVChild: oldChild,
+          newVChild,
+          mountIndex: index
+        })
+      }
+      delete keyedOldMap[newKey]
+      lastPlacedIndex = Math.max(lastPlacedIndex, oldChild.mountIndex)
+    } else {
+      patch.push({ type: elementInsert, newVChild, mountIndex: index })
+    }
+  })
+
+  // 筛选出所有的需要移动的元素
+  const moveVChild = patch
+    .filter((action) => action.type === elementMove)
+    .map((item) => item.oldVChild)
+  Object.values(keyedOldMap)
+    .concat(moveVChild)
+    .forEach((oldVChild) => {
+      // 通过虚拟dom 寻找真实的dom 从而进行删除
+      const currentDom = findDom(oldVChild)
+      if (currentDom) parentDom.removeChild(currentDom)
+    })
+
+  patch.forEach((action) => {
+    const { type, oldVChild, newVChild, mountIndex } = action
+    const childNodes = parentDom.childNodes
+
+    if (type === elementInsert) {
+      const newDom = createDom(newVChild)
+      // 虽然元素已经被删除，但是内存中的元素还是存在的
+      const childNode = childNodes[mountIndex]
+      if (childNode) {
+        parentDom.insertBefore(newDom, childNode)
+      } else {
+        parentDom.appendChild(newDom)
+      }
+    } else {
+      const oldDOm = findDom(oldVChild)
+      const childNode = childNodes[mountIndex]
+      if (childNode) {
+        parentDom.insertBefore(oldDOm, childNode)
+      } else {
+        parentDom.appendChild(oldDOm)
+      }
+    }
+  })
 }
 
 /**
@@ -305,10 +367,7 @@ function updateElement(oldVdom, newVdom) {
   }
 
   // 判断是否是普通的标签
-  if (
-    typeof oldVdom.type === 'string' ||
-    oldVdom.type === reactFragment
-  ) {
+  if (typeof oldVdom.type === 'string' || oldVdom.type === reactFragment) {
     const currentDom = (newVdom.dom = findDom(oldVdom))
     updateProps(currentDom, oldVdom.props, newVdom.props)
     updateChildren(currentDom, oldVdom.props.children, newVdom.props.children)
