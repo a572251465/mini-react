@@ -148,6 +148,18 @@ class Component {
       this.componentWillUpdate()
     }
 
+    // 判断生命周期函数getDerivedStateFromProps钩子是否存在
+    if (this.constructor.getDerivedStateFromProps) {
+      const newState = this.constructor.getDerivedStateFromProps(
+        this.props,
+        this.state
+      )
+      this.state = {
+        ...this.state,
+        ...newState
+      }
+    }
+
     const oldRenderVdom = this.oldRenderVdom
     const oldDom = findDom(oldRenderVdom)
     const newRenderVdom = this.render()
