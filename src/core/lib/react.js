@@ -160,6 +160,12 @@ class Component {
       }
     }
 
+    // 表示getSnapshotBeforeUpdate 执行结果
+    let snapshotRes = {}
+    if (this.getSnapshotBeforeUpdate) {
+      snapshotRes = this.getSnapshotBeforeUpdate()
+    }
+
     const oldRenderVdom = this.oldRenderVdom
     const oldDom = findDom(oldRenderVdom)
     const newRenderVdom = this.render()
@@ -168,7 +174,7 @@ class Component {
 
     // 钩子componentDidUpdate执行位置
     if (this.componentDidUpdate) {
-      this.componentDidUpdate()
+      this.componentDidUpdate(this.props, this.state, snapshotRes)
     }
   }
 }

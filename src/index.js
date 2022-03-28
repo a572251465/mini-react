@@ -1,52 +1,60 @@
 /**
- * @description 表示react新的生命钩子函数
+ * @description 钩子函数getSnapshotBeforeUpdate实现
  */
 import React from './react'
 import ReactDom from './react-dom'
-
-class CounterSub extends React.Component {
-  constructor(props) {
-    super(props)
-    this.state = {
-      number: 0
-    }
-  }
-
-  static getDerivedStateFromProps(nextProps, prevState) {
-    const { number } = nextProps
-    return number % 2 === 0 ? { number: number * 2 } : { number: number * 3 }
-  }
-
-  render() {
-    return (
-      <div>
-        <h1>子类：{this.state.number}</h1>
-      </div>
-    )
-  }
-}
 
 class Counter extends React.Component {
   constructor(props) {
     super(props)
     this.state = {
-      number: 0
+      messages: []
+    }
+    this.wrapper = React.createRef()
+  }
+
+  addMessage() {
+    this.setState((state) => ({
+      messages: [`${state.messages.length}`, ...this.state.messages]
+    }))
+  }
+
+  getSnapshotBeforeUpdate() {
+    return {
+      prevScrollTop: this.wrapper.current.scrollTop,
+      preScrollHeight: this.wrapper.current.scrollHeight
     }
   }
 
-  handleClick = () => {
-    this.setState({
-      number: this.state.number + 1
-    })
+  componentDidUpdate(prevProps, prevState, { prevScrollTop, preScrollHeight }) {
+    this.wrapper.current.scrollTop =
+      prevScrollTop + (this.wrapper.current.scrollHeight - preScrollHeight)
+  }
+
+  componentDidMount() {
+    this.timer = setInterval(() => {
+      this.addMessage()
+    }, 1000)
+  }
+
+  componentWillUnmount() {
+    clearInterval(this.timer)
   }
 
   render() {
+    const styles = {
+      height: '100px',
+      width: '200px',
+      border: '1px solid red',
+      overflow: 'auto'
+    }
+
     return (
-      <React.Fragment>
-        <p>{this.state.number}</p>
-        <CounterSub number={this.state.number} />
-        <button onClick={this.handleClick}>点击添加按钮</button>
-      </React.Fragment>
+      <div ref={this.wrapper} style={styles}>
+        {this.state.messages.map((message, index) => (
+          <div key={index}>{message}</div>
+        ))}
+      </div>
     )
   }
 }
