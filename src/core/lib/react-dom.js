@@ -7,6 +7,7 @@ import {
   classComponentFlag,
   elementContext,
   elementInsert,
+  elementMemo,
   elementMove,
   elementProvider,
   reactForwardRef,
@@ -26,7 +27,7 @@ let scheduleUpdate
  * @description state hook
  * @param {*} initValue
  */
- export function useState(initValue) {
+export function useState(initValue) {
   valueStack[hookIndex] = valueStack[hookIndex] || initValue
   let currentIndex = hookIndex
 
@@ -37,7 +38,55 @@ let scheduleUpdate
     scheduleUpdate()
   }
 
-  return [valueStack[hookIndex ++], callback]
+  return [valueStack[hookIndex++], callback]
+}
+
+/**
+ * @author lihh
+ * @description memo 函数
+ * @param {*} factory 生成data 的函数
+ * @param {*} deps 监听变化的依赖项
+ */
+export function useMemo(factory, deps) {
+  if (valueStack[hookIndex]) {
+    const [lastMemo, lastDeps] = valueStack[hookIndex]
+    const same = deps.every((item, index) => item === lastDeps[index])
+    if (same) {
+      hookIndex++
+      return lastMemo
+    } else {
+      const newMemo = factory()
+      valueStack[hookIndex++] = [newMemo, deps]
+      return newMemo
+    }
+  } else {
+    const newMemo = factory()
+    valueStack[hookIndex++] = [newMemo, deps]
+    return newMemo
+  }
+}
+
+/**
+ * @author lihh
+ * @description callback 回调函数
+ * @param {*} callback
+ * @param {*} deps
+ */
+export function useCallback(callback, deps) {
+  if (valueStack[hookIndex]) {
+    const [lastCallback, lastDeps] = valueStack[hookIndex]
+    const some = deps.every((item, index) => item === lastDeps[index])
+    if (some) {
+      hookIndex++
+      return lastCallback
+    } else {
+      valueStack[hookIndex++] = [callback, deps]
+      return callback
+    }
+  } else {
+    valueStack[hookIndex++] = [callback, deps]
+    return callback
+  }
 }
 
 /**
@@ -184,6 +233,25 @@ function mountContextComponent(vdom) {
 
 /**
  * @author lihh
+ * @description 挂载memo节点
+ * @param {*} vdom
+ */
+function mountMemoComponent(vdom) {
+  // 表示需要执行的函数 functionComponent
+  let {
+    type: { functionComponent },
+    props
+  } = vdom
+  // 挂载时候的props 为了后期的比较
+  vdom.prevProps = props
+  // 生成虚拟doom
+  const renderVdom = functionComponent(props)
+  vdom.oldRenderVdom = renderVdom
+  return createDom(renderVdom)
+}
+
+/**
+ * @author lihh
  * @description 从虚拟dom 转换为真实的dom
  * @param vdom 虚拟dom
  * @returns {Text}
@@ -192,7 +260,9 @@ function createDom(vdom) {
   const { type, props, ref } = vdom
   let dom
 
-  if (type && type.$$typeof === elementProvider) {
+  if (type && type.$$typeof === elementMemo) {
+    return mountMemoComponent(vdom)
+  } else if (type && type.$$typeof === elementProvider) {
     return mountProviderComponent(vdom)
   } else if (type && type.$$typeof === elementContext) {
     return mountContextComponent(vdom)
@@ -472,11 +542,40 @@ function updateContextComponent(oldVdom, newVdom) {
 
 /**
  * @author lihh
+ * @description 表示更新memo组件
+ * @param {*} oldVdom 旧虚拟dom
+ * @param {*} newVdom 新虚拟dom
+ */
+function updateMemoComponent(oldVdom, newVdom) {
+  const { type, prevProps } = oldVdom
+  // 进行新旧props是否发生变化
+  if (!type.compare(prevProps, newVdom.props)) {
+    const oldDOM = findDom(oldVdom)
+    const parentDom = oldDOM.parentNode
+
+    const { type, props } = newVdom
+    const renderVdom = type.functionComponent(props)
+    compareTwoVdom(parentDom, oldVdom.oldRenderVdom, renderVdom)
+    newVdom.prevProps = props
+    newVdom.oldRenderVdom = renderVdom
+  } else {
+    newVdom.prevProps = prevProps
+    newVdom.oldRenderVdom = oldVdom.oldRenderVdom
+  }
+}
+
+/**
+ * @author lihh
  * @description 进行元素的更新比较
  * @param {*} oldVdom 老的虚拟dom
  * @param {*} newVdom 新的虚拟dom
  */
 function updateElement(oldVdom, newVdom) {
+  if (oldVdom.type.$$typeof === elementMemo) {
+    updateMemoComponent(oldVdom, newVdom)
+    return
+  }
+
   if (oldVdom.type.$$typeof === elementContext) {
     updateContextComponent(oldVdom, newVdom)
     return

@@ -1,13 +1,20 @@
 import {
   classComponentFlag,
   elementContext,
+  elementMemo,
   elementProvider,
   reactElement,
   reactForwardRef,
   reactFragment
 } from '../utils/constant'
-import { wrapStringToVdom } from '../utils'
-import { compareTwoVdom, findDom, useState } from './react-dom'
+import { shallowEqual, wrapStringToVdom } from '../utils'
+import {
+  compareTwoVdom,
+  findDom,
+  useState,
+  useMemo,
+  useCallback
+} from './react-dom'
 
 // 实现批量更新的逻辑
 export const updateQueue = {
@@ -192,26 +199,49 @@ function forwardRef(render) {
   }
 }
 
-// context 上下文
-const context = {
-  $$typeof: elementContext,
-  _currentValue: undefined
-}
-context.Provider = {
-  $$typeof: elementProvider,
-  _context: context
-}
-context.Consumer = {
-  $$typeof: elementContext,
-  _context: context
-}
 /**
  * @author lihh
  * @description 表示执行上下文
- * @returns 上下对象
+ * @returns {_currentValue: undefined, $$typeof: (*|symbol)}
  */
 function createContext() {
+  const context = {
+    $$typeof: elementContext,
+    _currentValue: undefined
+  }
+  context.Provider = {
+    $$typeof: elementProvider,
+    _context: context
+  }
+  context.Consumer = {
+    $$typeof: elementContext,
+    _context: context
+  }
+
   return context
+}
+
+/**
+ * @author lihh
+ * @description 生成memo函数
+ * @param {*} functionComponent 函数组件
+ * @param {*} compare 比较对象
+ */
+function memo(functionComponent, compare = shallowEqual) {
+  return {
+    $$typeof: elementMemo,
+    compare,
+    functionComponent
+  }
+}
+
+class PureComponent extends Component {
+  shouldComponentUpdate(nextProps, nextState) {
+    return (
+      !shallowEqual(this.props, nextProps) ||
+      !shallowEqual(this.state, nextState)
+    )
+  }
 }
 
 const React = {
@@ -221,6 +251,10 @@ const React = {
   forwardRef,
   Fragment: reactFragment,
   createContext,
-  useState
+  useState,
+  useCallback,
+  useMemo,
+  memo,
+  PureComponent
 }
 export default React
