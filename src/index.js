@@ -1,29 +1,24 @@
-import React from 'react'
-import ReactDom from 'react-dom'
+import React from './react'
+import ReactDom from './react-dom'
 
-let Child = ({ data, handleClick }) => {
-  console.log('child')
-  return <button onClick={handleClick}>点击增加{data.number}</button>
+function reducer(state, action) {
+  switch (action.type) {
+    case 'add':
+      return { number: state.number + 1 }
+    case 'delete':
+      return { number: state.number - 1 }
+    default:
+      return state
+  }
 }
-Child = React.memo(Child)
 
 function App() {
-  console.log('App')
-
-  const [name, setName] = React.useState('lihh')
-  const [number, setNumber] = React.useState(0)
-
-  const data = React.useMemo(() => ({ number }), [number])
-  const handleClick = React.useCallback(() => setNumber(number + 1), [number])
-
+  const [state, dispatch] = React.useReducer(reducer, { number: 0 })
   return (
     <div>
-      <input
-        type="text"
-        value={name}
-        onInput={(event) => setName(event.target.value)}
-      />
-      <Child data={data} handleClick={handleClick} />
+      <h1>显示内容：{state.number}</h1>
+      <button onClick={() => dispatch({ type: 'add' })}>添加</button>
+      <button onClick={() => dispatch({ type: 'delete' })}>删除</button>
     </div>
   )
 }

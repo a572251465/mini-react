@@ -13,7 +13,8 @@ import {
   findDom,
   useState,
   useMemo,
-  useCallback
+  useCallback,
+  useReducer
 } from './react-dom'
 
 // 实现批量更新的逻辑
@@ -255,6 +256,7 @@ const React = {
   useCallback,
   useMemo,
   memo,
-  PureComponent
+  PureComponent,
+  useReducer
 }
 export default React

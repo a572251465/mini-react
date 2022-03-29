@@ -28,17 +28,33 @@ let scheduleUpdate
  * @param {*} initValue
  */
 export function useState(initValue) {
+  return useReducer(null, initValue)
+}
+
+/**
+ * @author lihh
+ * @description 实现useReducer
+ * @param reducer
+ * @param initValue
+ * @returns {(*|dispatch)[]}
+ */
+export function useReducer(reducer, initValue) {
   valueStack[hookIndex] = valueStack[hookIndex] || initValue
   let currentIndex = hookIndex
 
-  const callback = (action) => {
+  function dispatch(action) {
     const oldState = valueStack[currentIndex]
-    const newState = typeof action === 'function' ? action(oldState) : action
-    valueStack[currentIndex] = newState
+
+    if (reducer) {
+      const newState = reducer(oldState, action)
+      valueStack[currentIndex] = newState
+    } else {
+      const newState = typeof action === 'function' ? action(oldState) : action
+      valueStack[currentIndex] = newState
+    }
     scheduleUpdate()
   }
-
-  return [valueStack[hookIndex++], callback]
+  return [valueStack[hookIndex++], dispatch]
 }
 
 /**
