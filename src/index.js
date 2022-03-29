@@ -1,62 +1,81 @@
-/**
- * @description 钩子函数getSnapshotBeforeUpdate实现
- */
 import React from './react'
 import ReactDom from './react-dom'
 
-class Counter extends React.Component {
-  constructor(props) {
-    super(props)
-    this.state = {
-      messages: []
-    }
-    this.wrapper = React.createRef()
-  }
+const ThemeContext = React.createContext()
+const { Provider, Consumer } = ThemeContext
+console.log(Provider, Consumer, ThemeContext)
+const commonStyle = {
+  margin: '5px',
+  padding: '5px'
+}
 
-  addMessage() {
-    this.setState((state) => ({
-      messages: [`${state.messages.length}`, ...this.state.messages]
-    }))
-  }
+function Content() {
+  return (
+    <Consumer>
+      {(contextValue) => (
+        <div
+          style={{ ...commonStyle, border: `5px solid ${contextValue.color}` }}>
+          Context
+          <button
+            style={{ color: 'red' }}
+            onClick={() => contextValue.changeColor('red')}>
+            变红
+          </button>
+          <button
+            style={{ color: 'green' }}
+            onClick={() => contextValue.changeColor('green')}>
+            变绿
+          </button>
+        </div>
+      )}
+    </Consumer>
+  )
+}
 
-  getSnapshotBeforeUpdate() {
-    return {
-      prevScrollTop: this.wrapper.current.scrollTop,
-      preScrollHeight: this.wrapper.current.scrollHeight
-    }
-  }
-
-  componentDidUpdate(prevProps, prevState, { prevScrollTop, preScrollHeight }) {
-    this.wrapper.current.scrollTop =
-      prevScrollTop + (this.wrapper.current.scrollHeight - preScrollHeight)
-  }
-
-  componentDidMount() {
-    this.timer = setInterval(() => {
-      this.addMessage()
-    }, 1000)
-  }
-
-  componentWillUnmount() {
-    clearInterval(this.timer)
-  }
-
+class Main extends React.Component {
+  static contextType = ThemeContext
   render() {
-    const styles = {
-      height: '100px',
-      width: '200px',
-      border: '1px solid red',
-      overflow: 'auto'
-    }
-
     return (
-      <div ref={this.wrapper} style={styles}>
-        {this.state.messages.map((message, index) => (
-          <div key={index}>{message}</div>
-        ))}
+      <div
+        style={{
+          ...commonStyle,
+          border: `5px solid ${this.context.color}`
+        }}>
+        Main
+        <Content />
       </div>
     )
   }
 }
 
-ReactDom.render(<Counter />, document.getElementById('root'))
+class Page extends React.Component {
+  constructor(props) {
+    super(props)
+    this.state = { color: 'black' }
+  }
+
+  changeColor = (color) => {
+    this.setState({ color })
+  }
+
+  render() {
+    const contextValue = {
+      color: this.state.color,
+      changeColor: this.changeColor
+    }
+    return (
+      <Provider value={contextValue}>
+        <div
+          style={{
+            ...commonStyle,
+            width: '250px',
+            border: `5px solid ${this.state.color}`
+          }}>
+          <Main />
+        </div>
+      </Provider>
+    )
+  }
+}
+
+ReactDom.render(<Page />, document.getElementById('root'))

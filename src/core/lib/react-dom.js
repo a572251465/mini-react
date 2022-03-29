@@ -5,8 +5,10 @@
  */
 import {
   classComponentFlag,
+  elementContext,
   elementInsert,
   elementMove,
+  elementProvider,
   reactForwardRef,
   reactFragment,
   reactText
@@ -58,7 +60,7 @@ function updateProps(dom, oldProps = {}, newProps = {}) {
 function resolveChildren(childrens = [], dom) {
   childrens.forEach((children, i) => {
     children.mountIndex = i
-    render(children, dom)
+    mount(children, dom)
   })
 }
 
@@ -71,6 +73,11 @@ function mountClassComponent(vdom) {
   const { type, props, ref } = vdom
   const classInstance = new type(props)
   vdom.classInstance = classInstance
+
+  if (type.contextType) {
+    classInstance.context = type.contextType._currentValue
+  }
+
   if (ref) {
     ref.current = classInstance
   }
@@ -120,6 +127,38 @@ function mountForwardRefFunction(vdom) {
 
 /**
  * @author lihh
+ * @description 挂载provider组件
+ * @param {*} vdom 虚拟dom
+ */
+function mountProviderComponent(vdom) {
+  const { type, props } = vdom
+  const { value } = props
+  const _context = type._context
+  _context._currentValue = value
+
+  const renderVdom = props.children
+  vdom.oldRenderVdom = renderVdom
+  return createDom(renderVdom)
+}
+
+/**
+ * @author lihh
+ * @description 挂载context/ consumer模板
+ * @param {*} vdom 虚拟dom
+ */
+function mountContextComponent(vdom) {
+  const { type, props } = vdom
+  const _context = type._context
+  const renderVdom = (
+    typeof props.children === 'function' ? props.children : props.children.props
+  )(_context._currentValue)
+
+  vdom.oldRenderVdom = renderVdom
+  return createDom(renderVdom)
+}
+
+/**
+ * @author lihh
  * @description 从虚拟dom 转换为真实的dom
  * @param vdom 虚拟dom
  * @returns {Text}
@@ -128,7 +167,11 @@ function createDom(vdom) {
   const { type, props, ref } = vdom
   let dom
 
-  if (type && type.$$typeof === reactForwardRef) {
+  if (type && type.$$typeof === elementProvider) {
+    return mountProviderComponent(vdom)
+  } else if (type && type.$$typeof === elementContext) {
+    return mountContextComponent(vdom)
+  } else if (type && type.$$typeof === reactForwardRef) {
     return mountForwardRefFunction(vdom)
   } else if (type === reactText) {
     dom = document.createTextNode(String(props) === 'null' ? '' : props)
@@ -152,7 +195,7 @@ function createDom(vdom) {
   if (props && props.children) {
     if (!Array.isArray(props.children)) {
       props.children.mountIndex = 0
-      render(props.children, dom)
+      mount(props.children, dom)
     } else {
       resolveChildren(props.children, dom)
     }
@@ -175,6 +218,16 @@ function createDom(vdom) {
  * @param container 挂载节点
  */
 function render(vdom, container) {
+  mount(vdom, container)
+}
+
+/**
+ * @author lihh
+ * @description 对虚拟dom挂载
+ * @param {*} vdom 虚拟dom
+ * @param {*} container 容器
+ */
+function mount(vdom, container) {
   const dom = createDom(vdom)
   container.appendChild(dom)
 
@@ -351,11 +404,57 @@ function updateClassComponent(oldVdom, newVdom) {
 
 /**
  * @author lihh
+ * @description 更新context组件
+ * @param {*} oldVdom 旧虚拟dom
+ * @param {*} newVdom 新虚拟dom
+ */
+function updateProviderComponent(oldVdom, newVdom) {
+  const parentDom = findDom(oldVdom).parentNode
+  const { type, props } = newVdom
+
+  const _context = type._context
+  _context._currentValue = props.value
+
+  const renderVdom = props.children
+  compareTwoVdom(parentDom, oldVdom.oldRenderVdom, renderVdom)
+  newVdom.oldRenderVdom = renderVdom
+}
+
+/**
+ * @author lihh
+ * @description 更新provider组件
+ * @param {*} oldVdom 旧虚拟dom
+ * @param {*} newVdom 新虚拟dom
+ */
+function updateContextComponent(oldVdom, newVdom) {
+  const parentDom = findDom(oldVdom).parentNode
+  const { type, props } = newVdom
+
+  const _context = type._context
+  const renderVdom = (
+    typeof props.children === 'function' ? props.children : props.children.props
+  )(_context._currentValue)
+  compareTwoVdom(parentDom, oldVdom.oldRenderVdom, renderVdom)
+  newVdom.oldRenderVdom = renderVdom
+}
+
+/**
+ * @author lihh
  * @description 进行元素的更新比较
  * @param {*} oldVdom 老的虚拟dom
  * @param {*} newVdom 新的虚拟dom
  */
 function updateElement(oldVdom, newVdom) {
+  if (oldVdom.type.$$typeof === elementContext) {
+    updateContextComponent(oldVdom, newVdom)
+    return
+  }
+
+  if (oldVdom.type.$$typeof === elementProvider) {
+    updateProviderComponent(oldVdom, newVdom)
+    return
+  }
+
   // 首先判断是否是文本类型
   if (oldVdom.type === reactText) {
     const currentDom = (newVdom.dom = findDom(oldVdom))

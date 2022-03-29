@@ -1,5 +1,7 @@
 import {
   classComponentFlag,
+  elementContext,
+  elementProvider,
   reactElement,
   reactForwardRef,
   reactFragment
@@ -166,6 +168,10 @@ class Component {
       snapshotRes = this.getSnapshotBeforeUpdate()
     }
 
+    if (this.constructor.contextType) {
+      this.context = this.constructor.contextType._currentValue
+    }
+
     const oldRenderVdom = this.oldRenderVdom
     const oldDom = findDom(oldRenderVdom)
     const newRenderVdom = this.render()
@@ -186,11 +192,34 @@ function forwardRef(render) {
   }
 }
 
+// context 上下文
+const context = {
+  $$typeof: elementContext,
+  _currentValue: undefined
+}
+context.Provider = {
+  $$typeof: elementProvider,
+  _context: context
+}
+context.Consumer = {
+  $$typeof: elementContext,
+  _context: context
+}
+/**
+ * @author lihh
+ * @description 表示执行上下文
+ * @returns 上下对象
+ */
+function createContext() {
+  return context
+}
+
 const React = {
   createElement,
   createRef,
   Component,
   forwardRef,
-  Fragment: reactFragment
+  Fragment: reactFragment,
+  createContext
 }
 export default React
