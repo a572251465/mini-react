@@ -7,7 +7,7 @@ import {
   reactFragment
 } from '../utils/constant'
 import { wrapStringToVdom } from '../utils'
-import { compareTwoVdom, findDom } from './react-dom'
+import { compareTwoVdom, findDom, useState } from './react-dom'
 
 // 实现批量更新的逻辑
 export const updateQueue = {
@@ -220,6 +220,7 @@ const React = {
   Component,
   forwardRef,
   Fragment: reactFragment,
-  createContext
+  createContext,
+  useState
 }
 export default React

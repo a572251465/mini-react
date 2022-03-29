@@ -1,81 +1,17 @@
-import React from './react'
-import ReactDom from './react-dom'
+import React from 'react'
+import ReactDom from 'react-dom'
 
-const ThemeContext = React.createContext()
-const { Provider, Consumer } = ThemeContext
-console.log(Provider, Consumer, ThemeContext)
-const commonStyle = {
-  margin: '5px',
-  padding: '5px'
-}
-
-function Content() {
+function App() {
+  const [number, setNumber] = React.useState(0)
+  const [count, setCount] = React.useState(10)
   return (
-    <Consumer>
-      {(contextValue) => (
-        <div
-          style={{ ...commonStyle, border: `5px solid ${contextValue.color}` }}>
-          Context
-          <button
-            style={{ color: 'red' }}
-            onClick={() => contextValue.changeColor('red')}>
-            变红
-          </button>
-          <button
-            style={{ color: 'green' }}
-            onClick={() => contextValue.changeColor('green')}>
-            变绿
-          </button>
-        </div>
-      )}
-    </Consumer>
+    <div>
+      <h1>显示数字:{number}</h1>
+      <button onClick={() => setNumber(number + 1)}>添加按钮</button>
+      <h2>显示计数:{count}</h2>
+      <button onClick={() => setCount(count + 1)}>增加</button>
+    </div>
   )
 }
 
-class Main extends React.Component {
-  static contextType = ThemeContext
-  render() {
-    return (
-      <div
-        style={{
-          ...commonStyle,
-          border: `5px solid ${this.context.color}`
-        }}>
-        Main
-        <Content />
-      </div>
-    )
-  }
-}
-
-class Page extends React.Component {
-  constructor(props) {
-    super(props)
-    this.state = { color: 'black' }
-  }
-
-  changeColor = (color) => {
-    this.setState({ color })
-  }
-
-  render() {
-    const contextValue = {
-      color: this.state.color,
-      changeColor: this.changeColor
-    }
-    return (
-      <Provider value={contextValue}>
-        <div
-          style={{
-            ...commonStyle,
-            width: '250px',
-            border: `5px solid ${this.state.color}`
-          }}>
-          <Main />
-        </div>
-      </Provider>
-    )
-  }
-}
-
-ReactDom.render(<Page />, document.getElementById('root'))
+ReactDom.render(<App />, document.getElementById('root'))

@@ -14,6 +14,31 @@ import {
   reactText
 } from '../utils/constant'
 import addEvent from './event'
+// 表示当前hook所处的下标位置
+let hookIndex = 0
+// 存储所有的hook状态
+const valueStack = []
+// 预定更新
+let scheduleUpdate
+
+/**
+ * @author lihh
+ * @description state hook
+ * @param {*} initValue
+ */
+ export function useState(initValue) {
+  valueStack[hookIndex] = valueStack[hookIndex] || initValue
+  let currentIndex = hookIndex
+
+  const callback = (action) => {
+    const oldState = valueStack[currentIndex]
+    const newState = typeof action === 'function' ? action(oldState) : action
+    valueStack[currentIndex] = newState
+    scheduleUpdate()
+  }
+
+  return [valueStack[hookIndex ++], callback]
+}
 
 /**
  * @author lihh
@@ -219,6 +244,13 @@ function createDom(vdom) {
  */
 function render(vdom, container) {
   mount(vdom, container)
+
+  scheduleUpdate = () => {
+    // 重置为0 因为更新的时候 需要重新获取
+    hookIndex = 0
+    // 开始比较，虽然新旧vdom一致 但是内容不同
+    compareTwoVdom(container, vdom, vdom)
+  }
 }
 
 /**
