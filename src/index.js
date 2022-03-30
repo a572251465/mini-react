@@ -1,26 +1,21 @@
 import React from './react'
 import ReactDom from './react-dom'
 
-function reducer(state, action) {
-  switch (action.type) {
-    case 'add':
-      return { number: state.number + 1 }
-    case 'delete':
-      return { number: state.number - 1 }
-    default:
-      return state
-  }
+function Counter() {
+  const [number, setNumber] = React.useState(0)
+
+  React.useEffect(() => {
+    const timer = setInterval(() => {
+      setNumber(number => number + 1)
+      console.log('开启一个定时器')
+
+      return () => {
+        console.log('关闭一个定时器')
+        clearInterval(timer)
+      }
+    }, 1000)
+  }, [])
+  return <p>{number}</p>
 }
 
-function App() {
-  const [state, dispatch] = React.useReducer(reducer, { number: 0 })
-  return (
-    <div>
-      <h1>显示内容：{state.number}</h1>
-      <button onClick={() => dispatch({ type: 'add' })}>添加</button>
-      <button onClick={() => dispatch({ type: 'delete' })}>删除</button>
-    </div>
-  )
-}
-
-ReactDom.render(<App />, document.getElementById('root'))
+ReactDom.render(<Counter />, document.getElementById('root'))

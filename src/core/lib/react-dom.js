@@ -33,6 +33,35 @@ export function useState(initValue) {
 
 /**
  * @author lihh
+ * @description useEffect依赖函数
+ * @param callback 执行回调函数
+ * @param deps 依赖选项
+ */
+export function useEffect(callback, deps) {
+  const currentIndex = hookIndex
+  if (valueStack[hookIndex]) {
+    const [destroy, lastDeps] = valueStack[currentIndex]
+    const some = deps && deps.every((item, index) => item === lastDeps[index])
+    if (!some) {
+      destroy && destroy()
+      setTimeout(() => {
+        const destroy = callback()
+        valueStack[currentIndex] = [destroy, deps]
+      })
+    }
+    hookIndex++
+  } else {
+    setTimeout(() => {
+      // 通过宏任务 第一时间进行执行任务
+      const destroy = callback()
+      valueStack[currentIndex] = [destroy, deps]
+    })
+    hookIndex++
+  }
+}
+
+/**
+ * @author lihh
  * @description 实现useReducer
  * @param reducer
  * @param initValue
