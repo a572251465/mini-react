@@ -15,7 +15,9 @@ import {
   useMemo,
   useCallback,
   useReducer,
-  useEffect
+  useEffect,
+  useRef,
+  useLayoutEffect
 } from './react-dom'
 
 // 实现批量更新的逻辑
@@ -259,6 +261,8 @@ const React = {
   memo,
   PureComponent,
   useReducer,
-  useEffect
+  useEffect,
+  useRef,
+  useLayoutEffect
 }
 export default React

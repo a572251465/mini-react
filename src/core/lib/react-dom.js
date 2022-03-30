@@ -33,31 +33,61 @@ export function useState(initValue) {
 
 /**
  * @author lihh
- * @description useEffect依赖函数
- * @param callback 执行回调函数
- * @param deps 依赖选项
+ * @description 实现useRef 函数
+ * @returns {{current: null}}
  */
-export function useEffect(callback, deps) {
+export function useRef() {
+  return { current: null }
+}
+
+/**
+ * @author lihh
+ * @description 共同的effect 选项
+ * @param fn 执行函数/ 宏任务/ 微任务
+ * @param callback 回调函数
+ * @param deps 依赖项
+ */
+function useCommmonEffect(fn, callback, deps) {
   const currentIndex = hookIndex
   if (valueStack[hookIndex]) {
     const [destroy, lastDeps] = valueStack[currentIndex]
     const some = deps && deps.every((item, index) => item === lastDeps[index])
     if (!some) {
       destroy && destroy()
-      setTimeout(() => {
+      fn(() => {
         const destroy = callback()
         valueStack[currentIndex] = [destroy, deps]
       })
     }
     hookIndex++
   } else {
-    setTimeout(() => {
+    fn(() => {
       // 通过宏任务 第一时间进行执行任务
       const destroy = callback()
       valueStack[currentIndex] = [destroy, deps]
     })
     hookIndex++
   }
+}
+
+/**
+ * @author lihh
+ * @description 跟useEffect签名保持一致，但是会影响浏览器的渲染
+ * @param callback 回调函数
+ * @param deps 依赖项
+ */
+export function useLayoutEffect(callback, deps) {
+  useCommmonEffect(queueMicrotask, callback, deps)
+}
+
+/**
+ * @author lihh
+ * @description useEffect依赖函数
+ * @param callback 执行回调函数
+ * @param deps 依赖选项
+ */
+export function useEffect(callback, deps) {
+  useCommmonEffect(setTimeout, callback, deps)
 }
 
 /**
