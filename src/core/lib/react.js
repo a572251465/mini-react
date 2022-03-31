@@ -17,7 +17,8 @@ import {
   useReducer,
   useEffect,
   useRef,
-  useLayoutEffect
+  useLayoutEffect,
+  useContext
 } from './react-dom'
 
 // 实现批量更新的逻辑
@@ -263,6 +264,7 @@ const React = {
   useReducer,
   useEffect,
   useRef,
-  useLayoutEffect
+  useLayoutEffect,
+  useContext
 }
 export default React

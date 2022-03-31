@@ -42,6 +42,16 @@ export function useRef() {
 
 /**
  * @author lihh
+ * @description context上下文
+ * @param context 参数
+ * @returns {*}
+ */
+export function useContext(context) {
+  return context._currentValue
+}
+
+/**
+ * @author lihh
  * @description 共同的effect 选项
  * @param fn 执行函数/ 宏任务/ 微任务
  * @param callback 回调函数
