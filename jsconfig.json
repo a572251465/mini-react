@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "baseUrl": "./",
+    "paths": {
+      "react/*": ["packages/react/*"],
+      "shared/*": ["packages/shared/*"]
+    }
+  },
+  "exclude": ["node_modules", "dist"]
+}
