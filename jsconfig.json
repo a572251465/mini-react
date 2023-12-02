@@ -3,7 +3,9 @@
     "baseUrl": "./",
     "paths": {
       "react/*": ["packages/react/*"],
-      "shared/*": ["packages/shared/*"]
+      "shared/*": ["packages/shared/*"],
+      "react-dom/*": ["packages/react-dom/*"],
+      "react-reconciler/*": ["packages/react-reconciler/*"]
     }
   },
   "exclude": ["node_modules", "dist"]

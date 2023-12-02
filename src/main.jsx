@@ -1,7 +1,10 @@
-const App = () => (
+import { createRoot } from "react-dom/client";
+
+const App = (
   <div className="name" style={{ color: "red" }}>
     <span>name: test</span>
   </div>
 );
 
-console.log(App())
+const root = createRoot(document.createElement("root"));
+console.log(root);

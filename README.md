@@ -5,3 +5,4 @@
 ## Task
 
 - [x] 实现 JSX 转换的功能
+- [x] 实现 RootFiber 构建
