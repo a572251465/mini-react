@@ -17,7 +17,7 @@ const RESERVED_PROPS = {
  * @return {boolean} 是否是有效的key
  */
 function hasValidKey(config, key) {
-  if (!hasOwnProperty.call(config, "key")) return false;
+  if (!hasOwnProperty(config, "key")) return false;
   return config.key !== "undefined";
 }
 
@@ -29,7 +29,7 @@ function hasValidKey(config, key) {
  * @return {boolean} 是否是有效的ref
  */
 function hasValidRef(config, ref) {
-  if (!hasOwnProperty.call(config, "ref")) return false;
+  if (!hasOwnProperty(config, "ref")) return false;
   return config.ref !== "undefined";
 }
 
@@ -86,7 +86,7 @@ export function jsxDEV(type, config, maybeKey, source, self) {
   // 循环遍历赋值
   for (propName in config) {
     if (
-      hasOwnProperty.call(config, propName) &&
+      hasOwnProperty(config, propName) &&
       !RESERVED_PROPS.hasOwnProperty(propName)
     )
       props[propName] = config[propName];

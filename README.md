@@ -6,3 +6,4 @@
 
 - [x] 实现 JSX 转换的功能
 - [x] 实现 RootFiber 构建
+- [x] 实现 beginWork 相关的内容（将所有的节点转换为fiber）

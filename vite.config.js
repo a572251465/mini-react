@@ -10,6 +10,7 @@ export default defineConfig({
       shared: path.posix.resolve("packages/shared"),
       "react-dom": path.resolve("packages/react-dom"),
       "react-reconciler": path.resolve("packages/react-reconciler"),
+      "react-dom-bindings": path.resolve("packages/react-dom-bindings"),
     },
   },
 });

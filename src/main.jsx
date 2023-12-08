@@ -7,4 +7,5 @@ const App = (
 );
 
 const root = createRoot(document.createElement("root"));
-console.log(root);
+debugger
+root.render(App);
