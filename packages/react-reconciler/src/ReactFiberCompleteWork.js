@@ -1,4 +1,5 @@
 import {
+  FunctionComponent,
   HostComponent,
   HostRoot,
   HostText,
@@ -135,6 +136,7 @@ export function completeWork(current, workInProgress) {
       bubbleProperties(workInProgress);
       break;
     }
+    case FunctionComponent:
     case HostRoot:
       bubbleProperties(workInProgress);
       break;

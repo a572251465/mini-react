@@ -1,6 +1,6 @@
 import { createRoot } from "react-dom/client";
 
-const App = (
+const App = () => (
   <div className="test" style={{ color: "red" }}>
     hello
     <span style={{ background: "red" }}>1111</span>
@@ -8,4 +8,4 @@ const App = (
 );
 
 const root = createRoot(document.getElementById("root"));
-root.render(App);
+root.render(<App />);

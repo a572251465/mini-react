@@ -1,4 +1,5 @@
 import {
+  FunctionComponent,
   HostComponent,
   HostRoot,
   HostText,
@@ -185,6 +186,7 @@ export function commitMutationEffectsOnFiber(finishedWork, root) {
   switch (finishedWork.tag) {
     case HostRoot:
     case HostComponent:
+    case FunctionComponent:
     case HostText: {
       recursivelyTraverseMutationEffects(root, finishedWork);
       commitReconciliationEffects(finishedWork);

@@ -15,6 +15,7 @@ import {
   reconcileChildFibers,
 } from "react-reconciler/src/ReactChildFiber";
 import { shouldSetTextContent } from "react-dom-bindings/src/client/ReactDOMHostConfig";
+import { renderWithHooks } from "react-reconciler/src/ReactFiberHooks";
 
 /**
  * 调和 children
@@ -87,6 +88,25 @@ function updateHostComponent(current, workInProgress) {
 }
 
 /**
+ * 挂载 未确定的组件
+ *
+ * @author lihh
+ * @param _current old fiber
+ * @param workInProgress new fiber
+ * @param Component 函数组件
+ */
+function mountIndeterminateComponent(_current, workInProgress, Component) {
+  const props = workInProgress.pendingProps;
+  // 拿到虚拟节点
+  const children = renderWithHooks(null, workInProgress, Component, props);
+  // 标识是函数组件
+  workInProgress.tag = FunctionComponent;
+
+  reconcileChildren(null, workInProgress, children);
+  return workInProgress.child;
+}
+
+/**
  * 开始渲染工作
  *
  * @author lihh
@@ -98,9 +118,13 @@ export function beginWork(current, workInProgress) {
 
   // 渲染的时候 判断是何种标签
   switch (tag) {
-    case IndeterminateComponent: {
-      return null;
-    }
+    // 可能是函数组件 或是 类组件
+    case IndeterminateComponent:
+      return mountIndeterminateComponent(
+        current,
+        workInProgress,
+        workInProgress.type,
+      );
     case LazyComponent: {
       return null;
     }
