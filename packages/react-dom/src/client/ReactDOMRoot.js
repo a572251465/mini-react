@@ -1,4 +1,7 @@
-import {createContainer, updateContainer} from "react-reconciler/src/ReactFiberReconciler";
+import {
+  createContainer,
+  updateContainer,
+} from "react-reconciler/src/ReactFiberReconciler";
 import { ConcurrentRoot } from "react-reconciler/src/ReactRootTags";
 
 /**
@@ -16,7 +19,7 @@ function ReactDOMRoot(internalRoot) {
  * 基于fiber 渲染root 组件
  *
  * @author lihh
- * @param children 表示子组件 此时就是虚拟节点
+ * @param children 表示子组件 此时就是虚拟节点 以我们的实例来说的话 就是App组件
  */
 ReactDOMRoot.prototype.render = function (children) {
   // 表示fiber node

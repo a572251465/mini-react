@@ -1,4 +1,7 @@
-import { diffProperties } from "react-dom-bindings/src/client/ReactDOMComponent";
+import {
+  diffProperties,
+  setInitialProperties,
+} from "react-dom-bindings/src/client/ReactDOMComponent";
 
 /**
  * 判断children 元素是否设置 text内容
@@ -31,6 +34,20 @@ export function appendInitialChild(parent, child) {
  * @return {Text}
  */
 export const createTextInstance = (context) => document.createTextNode(context);
+
+/**
+ * 创建 element dom的实例
+ *
+ * @author lihh
+ * @param type html的类型
+ * @param props 属性
+ * @param internalInstanceHandle
+ * @return {*}
+ */
+export const createInstance = (type, props, internalInstanceHandle) => {
+  const domElement = document.createElement(type);
+  return domElement;
+};
 
 /**
  * 添加child 元素的 API
@@ -66,4 +83,16 @@ export function insertBefore(parentInstance, child, beforeChild) {
  */
 export function prepareUpdate(domElement, type, oldProps, newProps) {
   return diffProperties(domElement, type, oldProps, newProps);
+}
+
+/**
+ * 表示初期化 children
+ *
+ * @author lihh
+ * @param domElement dom html
+ * @param type html 类型
+ * @param props html属性
+ */
+export function finalizeInitialChildren(domElement, type, props) {
+  setInitialProperties(domElement, type, props);
 }

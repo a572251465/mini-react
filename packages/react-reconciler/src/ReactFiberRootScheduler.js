@@ -2,7 +2,7 @@ import { scheduleCallback } from "react-reconciler/src/Scheduler";
 import { performConcurrentWorkOnRoot } from "react-reconciler/src/ReactFiberWorkLoop";
 
 /**
- * 通过micro task 执行调度任务
+ * 通过 requestIdleCallback 执行调度任务
  *
  * @author lihh
  * @param root fiber root 节点

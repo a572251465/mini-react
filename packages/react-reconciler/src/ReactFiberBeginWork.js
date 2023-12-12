@@ -79,7 +79,7 @@ function updateHostComponent(current, workInProgress) {
   // case. We won't handle it as a reified child. We will instead handle
   // this in the host environment that also has access to this prop. That
   // avoids allocating another HostText fiber and traversing it.
-  if (isDirectTextChild) nextChildren = nextProps.children;
+  if (isDirectTextChild) nextChildren = null;
 
   // 再次解析子children
   reconcileChildren(current, workInProgress, nextChildren);
@@ -95,7 +95,6 @@ function updateHostComponent(current, workInProgress) {
  */
 export function beginWork(current, workInProgress) {
   const tag = workInProgress.tag;
-  debugger;
 
   // 渲染的时候 判断是何种标签
   switch (tag) {
@@ -116,4 +115,6 @@ export function beginWork(current, workInProgress) {
     case HostRoot:
       return updateHostRoot(current, workInProgress);
   }
+
+  return null;
 }

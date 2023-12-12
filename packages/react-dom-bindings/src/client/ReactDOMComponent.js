@@ -1,7 +1,23 @@
 import { hasOwnProperty } from "shared/hasOwnProperty";
+import { setValueForStyles } from "react-dom-bindings/src/client/CSSPropertyOperations";
+import { setTextContent } from "react-dom-bindings/src/client/setTextContent";
+import { setValueForProperty } from "react-dom-bindings/src/client/DOMPropertyOperations";
 
 const CHILDREN = "children";
 const STYLE = "style";
+const CLASSNAME = "className";
+
+/**
+ * 设置初期化的属性
+ *
+ * @author lihh
+ * @param domElement dom html元素
+ * @param tag html类型
+ * @param props html属性
+ */
+export function setInitialProperties(domElement, tag, props) {
+  setInitialDOMProperties(tag, domElement, props);
+}
 
 /**
  * 通过diff手段 比较属性
@@ -98,4 +114,36 @@ export function diffProperties(domElement, tag, lastProps, nextProps) {
     (updatePayload = updatePayload || []).push(STYLE, styleUpdates);
   }
   return updatePayload;
+}
+
+/**
+ * 设置初期的 dom属性
+ *
+ * @author lihh
+ * @param tag html 标签
+ * @param domElement html element
+ * @param nextProps new props
+ */
+function setInitialDOMProperties(tag, domElement, nextProps) {
+  for (const propKey in nextProps) {
+    if (hasOwnProperty(nextProps, propKey)) {
+      const nextProp = nextProps[propKey];
+
+      // 判断是否等于样式 针对样式可以做单独的处理
+      if (propKey === STYLE) {
+        setValueForStyles(domElement, nextProp);
+        // 如果属性名字是children的话
+        // （在生成fiber过程中，如果最后一个节点是一个文本节点是不做为fiber处理的，直接在这里进行处理）
+        // 单独做处理，直接赋值textContent
+      } else if (propKey === CHILDREN) {
+        if (["string", "number"].includes(typeof nextProp))
+          setTextContent(domElement, `${nextProp}`);
+      } else if (propKey === CLASSNAME) {
+        setValueForProperty(domElement, "class", nextProp);
+      } else if (nextProp !== null) {
+        // 如果是普通的属性，直接进行赋值（例如：class等）
+        setValueForProperty(domElement, propKey, nextProp);
+      }
+    }
+  }
 }

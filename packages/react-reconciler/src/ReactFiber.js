@@ -44,7 +44,7 @@ export function FiberNode(tag, key, pendingProps) {
 
   // Effects
   this.flags = NoFlags;
-  this.subtreeFlags = NoFlags;
+  this.subTreeFlags = NoFlags;
 
   // 属性
   this.memoizedProps = null;
@@ -102,7 +102,7 @@ export function createWorkInProgress(current, pendingProps) {
     workInProgress.pendingProps = pendingProps;
     workInProgress.type = current.type;
     workInProgress.flags = NoFlags;
-    workInProgress.subtreeFlags = NoFlags;
+    workInProgress.subTreeFlags = NoFlags;
   }
 
   workInProgress.flags = current.flags;

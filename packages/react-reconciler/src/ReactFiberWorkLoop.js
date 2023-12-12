@@ -2,6 +2,8 @@ import { createWorkInProgress } from "react-reconciler/src/ReactFiber";
 import { ensureRootIsScheduled } from "react-reconciler/src/ReactFiberRootScheduler";
 import { beginWork } from "react-reconciler/src/ReactFiberBeginWork";
 import { completeWork } from "react-reconciler/src/ReactFiberCompleteWork";
+import { MutationMask, NoFlags } from "react-reconciler/src/ReactFiberFlags";
+import {commitMutationEffectsOnFiber} from "react-reconciler/src/ReactFiberCommitWork";
 
 let workInProgressRoot = null;
 let workInProgress = null;
@@ -50,6 +52,26 @@ export function scheduleUpdateOnFiber(root, fiber, lane) {
 }
 
 /**
+ * 表示提交root 节点
+ *
+ * @author lihh
+ * @param root root 根节点
+ */
+function commitRoot(root) {
+  const { finishedWork } = root;
+
+  // 判断子元素是否存在副作用
+  const subtreeHasEffects =
+    (finishedWork.subTreeFlags & MutationMask) !== NoFlags;
+  // 判断自身是否有副作用
+  const rootHasEffect = (finishedWork.flags & MutationMask) !== NoFlags;
+
+  if (subtreeHasEffects || rootHasEffect)
+    commitMutationEffectsOnFiber(finishedWork, root);
+  root.current = finishedWork;
+}
+
+/**
  * 并发执行的工作
  *
  * @author lihh
@@ -57,6 +79,12 @@ export function scheduleUpdateOnFiber(root, fiber, lane) {
  */
 export function performConcurrentWorkOnRoot(root) {
   renderRootSync(root);
+
+  // 表示最终的work
+  const finishedWork = root.current.alternate;
+  root.finishedWork = finishedWork;
+
+  commitRoot(root);
 }
 
 /**

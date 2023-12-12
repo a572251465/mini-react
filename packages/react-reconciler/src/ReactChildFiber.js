@@ -66,7 +66,7 @@ export function createChildReconciler(shouldTrackSideEffects) {
    */
   function createChild(returnFiber, newChild) {
     // 如果是文本的话 直接创建文本fiber
-    if (["string", "number"].includes(typeof newChild)) {
+    if (newChild !== "" && ["string", "number"].includes(typeof newChild)) {
       const node = createFiberFromText(`${newChild}`);
       node.return = returnFiber;
       return node;
@@ -162,6 +162,8 @@ export function createChildReconciler(shouldTrackSideEffects) {
 
       return null;
     }
+
+    return null;
   }
 
   return reconcileChildFibers;
