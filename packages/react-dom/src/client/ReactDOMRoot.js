@@ -3,6 +3,7 @@ import {
   updateContainer,
 } from "react-reconciler/src/ReactFiberReconciler";
 import { ConcurrentRoot } from "react-reconciler/src/ReactRootTags";
+import { listenToAllSupportedEvents } from "react-dom-bindings/src/events/DOMPluginEventSystem";
 
 /**
  * 创建 react dom root 元素
@@ -36,5 +37,8 @@ ReactDOMRoot.prototype.render = function (children) {
  */
 export function createRoot(container) {
   const root = createContainer(container, ConcurrentRoot);
+
+  // 1. 监听支持 所有的事件
+  listenToAllSupportedEvents(container);
   return new ReactDOMRoot(root);
 }

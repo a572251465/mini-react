@@ -2,6 +2,10 @@ import {
   diffProperties,
   setInitialProperties,
 } from "react-dom-bindings/src/client/ReactDOMComponent";
+import {
+  precacheFiberNode,
+  updateFiberProps,
+} from "react-dom-bindings/src/client/ReactDOMComponentTree";
 
 /**
  * 判断children 元素是否设置 text内容
@@ -41,11 +45,13 @@ export const createTextInstance = (context) => document.createTextNode(context);
  * @author lihh
  * @param type html的类型
  * @param props 属性
- * @param internalInstanceHandle
+ * @param internalInstanceHandle 表示fiber
  * @return {*}
  */
 export const createInstance = (type, props, internalInstanceHandle) => {
   const domElement = document.createElement(type);
+  precacheFiberNode(internalInstanceHandle, domElement);
+  updateFiberProps(domElement, props);
   return domElement;
 };
 
