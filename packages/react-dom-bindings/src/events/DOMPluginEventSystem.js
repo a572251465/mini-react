@@ -10,6 +10,9 @@ import { getEventTarget } from "react-dom-bindings/src/events/getEventTarget";
 import { HostComponent } from "react-reconciler/src/ReactWorkTags";
 import { getListener } from "react-dom-bindings/src/events/getListener";
 
+// 表示监听的mark 标识 避免多次绑定
+const listeningMarker = "_reactListening" + Math.random().toString(36).slice(2);
+
 // 0. 插件系统 开始注册插件
 SimplePlugin.registerEvents();
 
@@ -20,6 +23,10 @@ SimplePlugin.registerEvents();
  * @param rootContainerElement 事件注册到的 root容器
  */
 export function listenToAllSupportedEvents(rootContainerElement) {
+  // 判断是否已经绑定过
+  if (rootContainerElement[listeningMarker]) return;
+  rootContainerElement[listeningMarker] = true;
+
   // allNativeEvents 表示所有的原生的事件
   // 通过遍历所有的原生事件 依次就捕获/ 冒泡 进行注册
   allNativeEvents.forEach((domEventName) => {
@@ -217,7 +224,7 @@ function processDispatchQueueItemsInOrder(
       executeDispatch(event, listener, currentTarget);
     }
   } else {
-    for (let i = 0; i < dispatchListeners.length; i) {
+    for (let i = 0; i < dispatchListeners.length; i++) {
       const { currentTarget, listener } = dispatchListeners[i];
       if (event.isPropagationStopped()) return;
       executeDispatch(event, listener, currentTarget);

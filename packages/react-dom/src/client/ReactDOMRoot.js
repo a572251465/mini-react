@@ -25,7 +25,6 @@ function ReactDOMRoot(internalRoot) {
 ReactDOMRoot.prototype.render = function (children) {
   // 表示fiber node
   const root = this._internalRoot;
-
   updateContainer(children, root);
 };
 

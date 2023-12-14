@@ -10,12 +10,20 @@
 - [x] 实现 commitRoot主要逻辑，将Fiber节点渲染到页面上
 - [x] 实现 兼容函数式组件
 - [x] 实现 合成事件
-- [ ] 实现 useReducer 挂载
+- [x] 实现 useReducer 挂载
+- [x] 实现 useReducer 更新 以及commit
 
 ## 面试题
+
 
 ## 关键截图
 
 ### 1. `useReducer` Mount的过程
 
 ![useReducerMount.png](images%2FuseReducerMount.png)
+
+## 2. `hook` 的Mount以及Update
+
+![hookMountOrUpdate.png](images%2FhookMountOrUpdate.png)
+
+![fiberAndHook.png](images%2FfiberAndHook.png)

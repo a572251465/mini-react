@@ -3,6 +3,7 @@ import { isArray } from "shared/isArray";
 import {
   createFiberFromElement,
   createFiberFromText,
+  createWorkInProgress,
   FiberNode,
 } from "react-reconciler/src/ReactFiber";
 import { Placement } from "react-reconciler/src/ReactFiberFlags";
@@ -16,7 +17,24 @@ import { HostText } from "react-reconciler/src/ReactWorkTags";
  */
 export function createChildReconciler(shouldTrackSideEffects) {
   /**
+   * 克隆一个新的fiber
+   *
+   * @author lihh
+   * @param fiber 旧的fiber
+   * @param pendingProps 以及参数
+   */
+  function cloneFiber(fiber, pendingProps) {
+    const clone = createWorkInProgress(fiber, pendingProps);
+    clone.index = 0;
+    clone.sibling = null;
+    return clone;
+  }
+
+  /**
    * 调和单个element 元素
+   *
+   * new: element{}
+   * old: element{} element{} ...
    *
    * @author lihh
    * @param returnFiber 父fiber
@@ -24,6 +42,22 @@ export function createChildReconciler(shouldTrackSideEffects) {
    * @param element 更新元素
    */
   function reconcileSingleElement(returnFiber, currentFirstChild, element) {
+    // 此处为单节点的diff
+    const { key, type } = element;
+    let child = currentFirstChild;
+
+    // 将新的虚拟dom 跟child 一一做比较
+    while (child !== null) {
+      // 判断是否是可以复用的fiber节点
+      if (child.key === key && child.type === type) {
+        const existFiber = cloneFiber(child, element.props);
+        existFiber.return = returnFiber;
+        return existFiber;
+      }
+
+      child = child.sibling;
+    }
+
     // 通过element 创建fiber 节点
     const created = createFiberFromElement(element);
     // 然后连接父子 fiber关系
@@ -39,7 +73,9 @@ export function createChildReconciler(shouldTrackSideEffects) {
    * @param newFiber 新的fiber
    */
   function placeSingleChild(newFiber) {
-    if (shouldTrackSideEffects) newFiber.flags |= Placement;
+    // 因为只有alternate 为null的场合才是初次挂载
+    if (shouldTrackSideEffects && newFiber.alternate === null)
+      newFiber.flags |= Placement;
     return newFiber;
   }
 

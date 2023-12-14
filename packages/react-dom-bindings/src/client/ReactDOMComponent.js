@@ -147,3 +147,40 @@ function setInitialDOMProperties(tag, domElement, nextProps) {
     }
   }
 }
+
+/**
+ * 更新dom 属性
+ *
+ * @author lihh
+ * @param domElement html 元素
+ * @param updatePayload 要更新的属性
+ */
+export function updateProperties(domElement, updatePayload) {
+  updateDOMProperties(domElement, updatePayload);
+}
+
+/**
+ * 更新 dom 属性
+ *
+ * @author lihh
+ * @param domElement html 节点
+ * @param updatePayload 更新内容
+ */
+function updateDOMProperties(domElement, updatePayload) {
+  for (let i = 0; i < updatePayload.length; ) {
+    // 拿到对应的key/ value
+    const propKey = updatePayload[i++];
+    const propValue = updatePayload[i++];
+
+    // 判断是否是style属性
+    if (propKey === STYLE) {
+      setValueForStyles(domElement, propValue);
+    } else if (propKey === CHILDREN) {
+      setTextContent(domElement, propValue);
+    } else if (propKey === CLASSNAME) {
+      setValueForProperty(domElement, "class", propValue);
+    } else {
+      setValueForProperty(domElement, propKey, propValue);
+    }
+  }
+}

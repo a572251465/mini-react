@@ -1,6 +1,7 @@
 import {
   diffProperties,
   setInitialProperties,
+  updateProperties,
 } from "react-dom-bindings/src/client/ReactDOMComponent";
 import {
   precacheFiberNode,
@@ -101,4 +102,25 @@ export function prepareUpdate(domElement, type, oldProps, newProps) {
  */
 export function finalizeInitialChildren(domElement, type, props) {
   setInitialProperties(domElement, type, props);
+}
+
+/**
+ * 提交更新的操作
+ *
+ * @author lihh
+ * @param domElement html 节点
+ * @param updatePayload 更新内容
+ * @param type 类型
+ * @param oldProps 旧的参数
+ * @param newProps 新的参数
+ */
+export function commitUpdate(
+  domElement,
+  updatePayload,
+  type,
+  oldProps,
+  newProps,
+) {
+  updateProperties(domElement, updatePayload, type, oldProps, newProps);
+  updateFiberProps(domElement, newProps);
 }

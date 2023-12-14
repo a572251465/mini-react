@@ -4,9 +4,14 @@ import {
   HostRoot,
   HostText,
 } from "react-reconciler/src/ReactWorkTags";
-import { MutationMask, Placement } from "react-reconciler/src/ReactFiberFlags";
+import {
+  MutationMask,
+  Placement,
+  Update,
+} from "react-reconciler/src/ReactFiberFlags";
 import {
   appendChild,
+  commitUpdate,
   insertBefore,
 } from "react-dom-bindings/src/client/ReactDOMHostConfig";
 
@@ -175,6 +180,41 @@ function commitReconciliationEffects(finishedWork) {
 }
 
 /**
+ * 提交更新的effect
+ *
+ * @author lihh
+ * @param finishedWork 执行结束的work
+ */
+function commitUpdateEffects(finishedWork) {
+  const flags = finishedWork.flags;
+  const current = finishedWork.alternate;
+
+  // 表示更新的操作
+  if (!!(flags & Update)) {
+    // 拿到的这是一个html 节点
+    const instance = finishedWork.stateNode;
+    if (instance !== null) {
+      const newProps = finishedWork.memoizedState;
+      const oldProps = current !== null ? current.memoizedState : newProps;
+      const type = finishedWork.type;
+      const updatePayload = finishedWork.updateQueue;
+      finishedWork.updateQueue = null;
+
+      if (updatePayload !== null) {
+        commitUpdate(
+          instance,
+          updatePayload,
+          type,
+          oldProps,
+          newProps,
+          finishedWork,
+        );
+      }
+    }
+  }
+}
+
+/**
  * 在fiber 基础上 提交副作用的commit
  *
  * @author lihh
@@ -182,14 +222,24 @@ function commitReconciliationEffects(finishedWork) {
  * @param root 根节点
  */
 export function commitMutationEffectsOnFiber(finishedWork, root) {
+  const flags = finishedWork.flags;
+  const current = finishedWork.alternate;
+
   // 针对tag 进行判断
   switch (finishedWork.tag) {
     case HostRoot:
-    case HostComponent:
     case FunctionComponent:
     case HostText: {
       recursivelyTraverseMutationEffects(root, finishedWork);
       commitReconciliationEffects(finishedWork);
+      break;
+    }
+    case HostComponent: {
+      recursivelyTraverseMutationEffects(root, finishedWork);
+      commitReconciliationEffects(finishedWork);
+
+      // 提交更新的副作用
+      commitUpdateEffects(finishedWork);
       break;
     }
   }

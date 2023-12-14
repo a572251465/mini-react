@@ -3,7 +3,8 @@ import { ensureRootIsScheduled } from "react-reconciler/src/ReactFiberRootSchedu
 import { beginWork } from "react-reconciler/src/ReactFiberBeginWork";
 import { completeWork } from "react-reconciler/src/ReactFiberCompleteWork";
 import { MutationMask, NoFlags } from "react-reconciler/src/ReactFiberFlags";
-import {commitMutationEffectsOnFiber} from "react-reconciler/src/ReactFiberCommitWork";
+import { commitMutationEffectsOnFiber } from "react-reconciler/src/ReactFiberCommitWork";
+import { finishQueueingConcurrentUpdates } from "react-reconciler/src/ReactFiberConcurrentUpdates";
 
 let workInProgressRoot = null;
 let workInProgress = null;
@@ -33,6 +34,8 @@ function prepareFreshStack(root) {
   // 表示工作中的progress
   workInProgress = rootWorkInProgress;
 
+  finishQueueingConcurrentUpdates();
+
   return rootWorkInProgress;
 }
 
@@ -45,8 +48,6 @@ function prepareFreshStack(root) {
  * @param lane
  */
 export function scheduleUpdateOnFiber(root, fiber, lane) {
-  // 表示准备刷新栈
-  prepareFreshStack(root);
   // 表示确定root 节点的 调度
   ensureRootIsScheduled(root);
 }

@@ -107,6 +107,33 @@ function mountIndeterminateComponent(_current, workInProgress, Component) {
 }
 
 /**
+ * 更新函数组件
+ *
+ * @author lihh
+ * @param current odl fiber
+ * @param workInProgress new fiber
+ * @param Component 函数组件
+ * @param nextProps 新的参数
+ */
+function updateFunctionComponent(
+  current,
+  workInProgress,
+  Component,
+  nextProps,
+) {
+  // 拿到新的参数 重新执行，拿到新的虚拟dom
+  const nextChildren = renderWithHooks(
+    current,
+    workInProgress,
+    Component,
+    nextProps,
+  );
+
+  reconcileChildren(current, workInProgress, nextChildren);
+  return workInProgress.child;
+}
+
+/**
  * 开始渲染工作
  *
  * @author lihh
@@ -132,7 +159,16 @@ export function beginWork(current, workInProgress) {
       return null;
     }
     case FunctionComponent: {
-      return null;
+      // 针对函数 其函数就是type
+      const Component = workInProgress.type;
+      // 此参数 可以解析出 函数组件的参数
+      const resolvedProps = workInProgress.pendingProps;
+      return updateFunctionComponent(
+        current,
+        workInProgress,
+        Component,
+        resolvedProps,
+      );
     }
     case HostComponent:
       return updateHostComponent(current, workInProgress);

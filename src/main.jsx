@@ -1,5 +1,5 @@
 import { createRoot } from "react-dom/client";
-import * as React from "react";
+import { useReducer } from "react/src/React";
 
 const reducer = (state, action) => {
   if (action.type === "add") return state + 1;
@@ -7,26 +7,18 @@ const reducer = (state, action) => {
 };
 
 const App = () => {
-  const [number, setNumber] = React.useReducer(reducer, 0);
+  const [number, setNumber] = useReducer(reducer, 0);
 
   return (
-    <div
-      className="test"
-      style={{ color: "red" }}
-      onClick={() => console.log("parent click")}
-      onClickCapture={() => console.log("parent capture click")}
+    <button
+      onClick={() => {
+        setNumber({ type: "add" });
+        setNumber({ type: "add" });
+        setNumber({ type: "add" });
+      }}
     >
-      <span
-        onClick={() => console.log("child click")}
-        onClickCapture={() => console.log("child capture click")}
-        style={{ background: "red" }}
-      >
-        1111
-        <br />
-        state: {number}
-      </span>
-      <button onClick={() => setNumber({ type: "add" })}>添加</button>
-    </div>
+      {number}
+    </button>
   );
 };
 
