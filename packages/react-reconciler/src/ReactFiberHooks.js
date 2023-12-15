@@ -3,6 +3,8 @@ import { ReactCurrentDispatcher } from "react/src/ReactCurrentDispatcher";
 import { scheduleUpdateOnFiber } from "react-reconciler/src/ReactFiberWorkLoop";
 import { enqueueConcurrentHookUpdate } from "react-reconciler/src/ReactFiberConcurrentUpdates";
 import { assign } from "shared/assign";
+import { isFunction } from "shared/isFunction";
+import { is } from "shared/is";
 
 let currentlyRenderingFiber = null;
 // 表示工作中的hook
@@ -73,6 +75,51 @@ function dispatchReducerAction(fiber, queue, action) {
 }
 
 /**
+ * 用来修改state 的方法  一般都是setState
+ *
+ * @author lihh
+ * @param fiber 当前运行的fiber
+ * @param queue 属于hook的 queue
+ * @param action 状态/ 动作
+ */
+function dispatchSetState(fiber, queue, action) {
+  const update = {
+    action,
+    next: null,
+    // 是否是紧急状态
+    hasEagerState: false,
+    // 紧急状态的值
+    eagerState: null,
+  };
+  // 上一次的reducer 函数
+  const lastRenderedReducer = queue.lastRenderedReducer;
+  // 执行到此处最新的状态
+  const currentState = queue.lastRenderedState;
+  // 拿到一个紧急的状态
+  const eagerState = lastRenderedReducer(currentState, action);
+
+  // 修改状态
+  update.hasEagerState = true;
+  update.eagerState = eagerState;
+  // 判断状态是否变化
+  if (is(eagerState, currentState)) return;
+
+  const root = enqueueConcurrentHookUpdate(fiber, queue, update);
+  scheduleUpdateOnFiber(root, fiber);
+}
+
+/**
+ * setState 的更新状态
+ *
+ * @author lihh
+ * @param initialState 初始化状态（对于更新处理而言，这种状态是无用的）
+ * @return {[*|null,*]}
+ */
+function updateState(initialState) {
+  return updateReducer(basicStateReducer);
+}
+
+/**
  * useReducer 核心方法
  *
  * @author lihh
@@ -91,6 +138,46 @@ function mountReducer(reducer, initialArg) {
   hook.queue = queue;
 
   const dispatch = (queue.dispatch = dispatchReducerAction.bind(
+    null,
+    currentlyRenderingFiber,
+    queue,
+  ));
+  return [hook.memoizedState, dispatch];
+}
+
+/**
+ * 其实 useState 是内置reducer版本的 useReducer
+ *
+ * @author lihh
+ * @param state 传递的状态
+ * @param action 修改状态的 action事件
+ * @return {*} 返回最新的状态
+ */
+function basicStateReducer(state, action) {
+  return isFunction(action) ? action(state) : state;
+}
+
+/**
+ * 表示 useState的挂载方法
+ *
+ * @author lihh
+ * @param initialArg 初期值
+ */
+function mountState(initialArg) {
+  // 创建 use state hook
+  const hook = mountWorkInProgressHook();
+
+  // 设置 hook state 状态
+  hook.memoizedState = initialArg;
+  const queue = {
+    pending: null,
+    dispatch: null,
+    lastRenderedReducer: basicStateReducer,
+    lastRenderedState: initialArg,
+  };
+  hook.queue = queue;
+
+  const dispatch = (queue.dispatch = dispatchSetState.bind(
     null,
     currentlyRenderingFiber,
     queue,
@@ -152,7 +239,9 @@ function updateReducer(reducer) {
     // 拿到第一个更新内容
     let update = first;
     do {
+      // 是否是一个紧急的state
       if (update.hasEagerState) {
+        // 如果是紧急的state的话 因为之前已经计算过了 直接赋值
         newState = update.eagerState;
       } else {
         const action = update.action;
@@ -168,9 +257,11 @@ function updateReducer(reducer) {
 
 const HooksDispatcherOnMountInDEV = {
   useReducer: mountReducer,
+  useState: mountState,
 };
 const HooksDispatcherOnUpdateInDEV = {
   useReducer: updateReducer,
+  useState: updateState,
 };
 
 /**

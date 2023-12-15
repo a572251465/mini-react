@@ -1,10 +1,10 @@
 import { createWorkInProgress } from "react-reconciler/src/ReactFiber";
-import { ensureRootIsScheduled } from "react-reconciler/src/ReactFiberRootScheduler";
 import { beginWork } from "react-reconciler/src/ReactFiberBeginWork";
 import { completeWork } from "react-reconciler/src/ReactFiberCompleteWork";
 import { MutationMask, NoFlags } from "react-reconciler/src/ReactFiberFlags";
 import { commitMutationEffectsOnFiber } from "react-reconciler/src/ReactFiberCommitWork";
 import { finishQueueingConcurrentUpdates } from "react-reconciler/src/ReactFiberConcurrentUpdates";
+import { scheduleTaskForRootDuringMicrotask } from "react-reconciler/src/ReactFiberRootScheduler";
 
 let workInProgressRoot = null;
 let workInProgress = null;
@@ -50,6 +50,19 @@ function prepareFreshStack(root) {
 export function scheduleUpdateOnFiber(root, fiber, lane) {
   // 表示确定root 节点的 调度
   ensureRootIsScheduled(root);
+}
+
+/**
+ * 确定 rootFiber 节点的调度
+ *
+ * @author lihh
+ * @param root 表示root fiber 节点
+ */
+export function ensureRootIsScheduled(root) {
+  if (workInProgressRoot) return;
+  workInProgressRoot = root;
+  // 通过微任务 进行root节点的调度任务
+  scheduleTaskForRootDuringMicrotask(root);
 }
 
 /**
@@ -99,6 +112,7 @@ function renderRootSync(root) {
 
   // 同步循环工作
   workLoopSync();
+  workInProgressRoot = null;
 }
 
 /**

@@ -12,6 +12,7 @@
 - [x] 实现 合成事件
 - [x] 实现 useReducer 挂载
 - [x] 实现 useReducer 更新 以及commit
+- [x] 实现 useState 逻辑
 
 ## 面试题
 

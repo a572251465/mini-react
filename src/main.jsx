@@ -1,23 +1,18 @@
 import { createRoot } from "react-dom/client";
-import { useReducer } from "react/src/React";
-
-const reducer = (state, action) => {
-  if (action.type === "add") return state + 1;
-  return state;
-};
+import { useReducer, useState } from "react/src/React";
 
 const App = () => {
-  const [number, setNumber] = useReducer(reducer, 0);
+  const [state, setState] = useState(0);
 
   return (
     <button
       onClick={() => {
-        setNumber({ type: "add" });
-        setNumber({ type: "add" });
-        setNumber({ type: "add" });
+        setState((state) => state + 1);
+        setState((state) => state + 2);
+        setState((state) => state + 3);
       }}
     >
-      {number}
+      {state}
     </button>
   );
 };
