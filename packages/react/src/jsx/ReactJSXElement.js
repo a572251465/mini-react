@@ -83,6 +83,11 @@ export function jsxDEV(type, config, maybeKey, source, self) {
   // 判断是否是有效的ref
   if (hasValidRef(config, "ref")) ref = config.ref;
 
+  // react18 之后针对key进行处理
+  if (maybeKey !== undefined) {
+    key = maybeKey;
+  }
+
   // 循环遍历赋值
   for (propName in config) {
     if (

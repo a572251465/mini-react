@@ -19,6 +19,17 @@ export function shouldSetTextContent(props) {
 }
 
 /**
+ * 进行子节点删除
+ *
+ * @author lihh
+ * @param parentInstance 父节点实例 其实就是html元素
+ * @param child 子节点元素
+ */
+export function removeChild(parentInstance, child) {
+  parentInstance.removeChild(child);
+}
+
+/**
  * 添加初始化 子元素
  *
  * @author lihh

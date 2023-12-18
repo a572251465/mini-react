@@ -13,7 +13,87 @@ import {
   appendChild,
   commitUpdate,
   insertBefore,
+  removeChild,
 } from "react-dom-bindings/src/client/ReactDOMHostConfig";
+
+let hostParent = null;
+
+/**
+ * 递归遍历删除的effect
+ *
+ * @author lihh
+ * @param finishedRoot 已经完成的 root 节点
+ * @param nearestMountedAncestor 最近的祖父节点
+ * @param parent 父节点
+ */
+function recursivelyTraverseDeletionEffects(
+  finishedRoot,
+  nearestMountedAncestor,
+  parent,
+) {
+  let child = parent.child;
+  while (child !== null) {
+    commitDeletionEffectsOnFiber(finishedRoot, nearestMountedAncestor, child);
+    child = child.sibling;
+  }
+}
+
+/**
+ * 在fiber上 提交删除副作用
+ *
+ * @author lihh
+ * @param finishedRoot 完成的root节点
+ * @param nearestMountedAncestor 附近最近的被挂载的祖先节点
+ * @param deletedFiber 被删除的节点
+ */
+function commitDeletionEffectsOnFiber(
+  finishedRoot,
+  nearestMountedAncestor,
+  deletedFiber,
+) {
+  switch (deletedFiber.tag) {
+    case HostComponent:
+    case HostText: {
+      recursivelyTraverseDeletionEffects(
+        finishedRoot,
+        nearestMountedAncestor,
+        deletedFiber,
+      );
+      if (hostParent !== null) removeChild(hostParent, deletedFiber.stateNode);
+    }
+    default:
+      break;
+  }
+}
+
+/**
+ * 提交删除的副作用
+ *
+ * @author lihh
+ * @param root root节点
+ * @param returnFiber 父类fiber 其实父亲不一定是真的dom父亲，有可能是函数 fiber
+ * @param deleteFiber 将要被删除的fiber
+ */
+function commitDeletionEffects(root, returnFiber, deleteFiber) {
+  let parent = returnFiber;
+  findParent: while (parent !== null) {
+    switch (parent.tag) {
+      case HostComponent: {
+        hostParent = parent.stateNode;
+        break findParent;
+      }
+      case HostRoot: {
+        hostParent = parent.stateNode.containerInfo;
+        break findParent;
+      }
+      default:
+        break;
+    }
+    parent = parent.return;
+  }
+  commitDeletionEffectsOnFiber(root, returnFiber, deleteFiber);
+  hostParent = null;
+}
 
 /**
  * 递归解析 有副作用的fiber
@@ -23,6 +103,15 @@ import {
  * @param parentFiber 父fiber
  */
 function recursivelyTraverseMutationEffects(root, parentFiber) {
+  // 判断是否有子节点需要删除
+  const deletions = parentFiber.deletions;
+  if (deletions !== null) {
+    for (let i = 0; i < deletions.length; i++) {
+      const childToDelete = deletions[i];
+      commitDeletionEffects(root, parentFiber, childToDelete);
+    }
+  }
+
   // 判断子child 是否有副作用
   if (!!(parentFiber.subTreeFlags & MutationMask)) {
     let { child } = parentFiber;
@@ -222,9 +311,6 @@ function commitUpdateEffects(finishedWork) {
  * @param root 根节点
  */
 export function commitMutationEffectsOnFiber(finishedWork, root) {
-  const flags = finishedWork.flags;
-  const current = finishedWork.alternate;
-
   // 针对tag 进行判断
   switch (finishedWork.tag) {
     case HostRoot:

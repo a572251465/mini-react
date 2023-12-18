@@ -4,18 +4,14 @@ import { useReducer, useState } from "react/src/React";
 const App = () => {
   const [state, setState] = useState(0);
 
-  return state === 0 ? (
-    <div
-      key="a1"
+  return (
+    <button
       onClick={() => {
-        debugger;
-        setState(() => state + 1);
+        setState((state) => state + 1);
       }}
     >
       {state}
-    </div>
-  ) : (
-    <span key="a1">{state}</span>
+    </button>
   );
 };
 

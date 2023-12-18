@@ -37,6 +37,8 @@ export function FiberNode(tag, key, pendingProps) {
   this.sibling = null;
   // 索引
   this.index = 0;
+  // 表示需要删除的节点
+  this.deletions = null;
 
   // 表示ref 引用
   this.ref = null;
