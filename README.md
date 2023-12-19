@@ -13,12 +13,11 @@
 - [x] 实现 useReducer 挂载
 - [x] 实现 useReducer 更新 以及commit
 - [x] 实现 useState 逻辑
-- [ ] 实现 DOM DIFF 逻辑
+- [x] 实现 DOM DIFF 逻辑
 - [ ] 实现 useEffect 逻辑
 - [ ] 实现 useLayoutEffect逻辑
 
 ## 面试题
-
 
 ## 关键截图
 

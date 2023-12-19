@@ -150,11 +150,11 @@ function mountReducer(reducer, initialArg) {
  *
  * @author lihh
  * @param state 传递的状态
- * @param action 修改状态的 action事件
+ * @param action 修改状态的 action事件 有可能只是状态
  * @return {*} 返回最新的状态
  */
 function basicStateReducer(state, action) {
-  return isFunction(action) ? action(state) : state;
+  return isFunction(action) ? action(state) : action;
 }
 
 /**
