@@ -6,6 +6,7 @@ import {
 } from "react-reconciler/src/ReactWorkTags";
 import {
   MutationMask,
+  Passive,
   Placement,
   Update,
 } from "react-reconciler/src/ReactFiberFlags";
@@ -15,8 +16,226 @@ import {
   insertBefore,
   removeChild,
 } from "react-dom-bindings/src/client/ReactDOMHostConfig";
+import {
+  Passive as HookPassive,
+  HasEffect as HookHasEffect,
+} from "react-reconciler/src/ReactHookEffectTags";
 
 let hostParent = null;
+
+/**
+ * 提交变更的effect
+ *
+ *@author lihh
+ * @param finishedWork 结束的工作 work
+ * @param root 根节点
+ */
+export function commitMutationEffects(finishedWork, root) {
+  commitMutationEffectsOnFiber(finishedWork, root);
+}
+
+/**
+ * 提交消极的 卸载函数的effect
+ *
+ * @author lihh
+ * @param finishedWork 结束的work
+ */
+export function commitPassiveUnmountEffects(finishedWork) {
+  commitPassiveUnmountOnFiber(finishedWork);
+}
+
+/**
+ * 提交hook effect unMount事件
+ *
+ * @author lihh
+ * @param flags
+ * @param finishedWork
+ */
+function commitHookEffectListUnmount(flags, finishedWork) {
+  // 拿到fiber中更新队列
+  const updateQueue = finishedWork.updateQueue;
+  // 拿到effect
+  const lastEffect = updateQueue !== null ? updateQueue.lastEffect : null;
+
+  if (lastEffect !== null) {
+    // 拿到待执行的 第一个effect
+    const firstEffect = lastEffect.next;
+    let effect = firstEffect;
+
+    do {
+      // 满足条件的话 说明满足内部存在effect
+      if ((effect.tag & flags) === flags) {
+        // 拿到effect 副作用函数
+        const destroy = effect.destroy;
+        effect.destroy = null;
+
+        if (destroy !== null) destroy();
+      }
+
+      effect = effect.next;
+    } while (effect !== firstEffect);
+  }
+}
+
+/**
+ * 提交执行 hook中消极的卸载函数effect
+ *
+ * @author lihh
+ * @param finishedWork 完成work
+ * @param nearestMountedAncestor 最近被挂载的节点
+ * @param hookFlags hook的标志
+ */
+function commitHookPassiveUnmountEffects(
+  finishedWork,
+  nearestMountedAncestor,
+  hookFlags,
+) {
+  commitHookEffectListUnmount(hookFlags, finishedWork, nearestMountedAncestor);
+}
+
+/**
+ * 在fiber上 提交消极的卸载函数
+ *
+ * @author lihh
+ * @param finishedWork 结束的fiber
+ */
+function commitPassiveUnmountOnFiber(finishedWork) {
+  switch (finishedWork.tag) {
+    case FunctionComponent: {
+      //  递归遍历处理子节点
+      recursivelyTraversePassiveUnmountEffects(finishedWork);
+
+      // 判断fiber中是否包含effect
+      if (!!(finishedWork.flags & Passive)) {
+        commitHookPassiveUnmountEffects(
+          finishedWork,
+          finishedWork.return,
+          // 表示存在useEffect & 有待执行的useEffect
+          HookPassive | HookHasEffect,
+        );
+      }
+      break;
+    }
+
+    default: {
+      recursivelyTraversePassiveUnmountEffects(finishedWork);
+      break;
+    }
+  }
+}
+
+/**
+ * 提交执行 useEffect的函数
+ *
+ * @author lihh
+ * @param root 主 节点
+ * @param finishedWork 完成的work
+ */
+export function commitPassiveMountEffects(root, finishedWork) {
+  commitPassiveMountOnFiber(root, finishedWork);
+}
+
+/**
+ * 递归遍历消息挂载effect（其实就是执行useEffect 时机）
+ *
+ * @author lihh
+ * @param root 根节点
+ * @param parentFiber 父类的fiber
+ */
+function recursivelyTraversePassiveMountEffects(root, parentFiber) {
+  // 判断fiber上 是否包含effect
+  if (!!(parentFiber.subTreeFlags & Passive)) {
+    let child = parentFiber.child;
+    for (; child !== null; child = child.sibling)
+      commitPassiveMountOnFiber(root, child);
+  }
+}
+
+/**
+ * 在fiber上  执行useEffect的挂载过程
+ *
+ * @author lihh
+ * @param finishedRoot 执行结束的root 节点
+ * @param finishedWork 执行结束的 work
+ */
+function commitPassiveMountOnFiber(finishedRoot, finishedWork) {
+  const flags = finishedWork.flags;
+
+  switch (finishedWork.tag) {
+    case FunctionComponent: {
+      recursivelyTraversePassiveMountEffects(finishedRoot, finishedWork);
+
+      // 判断fiber中是否包含effect
+      if (!!(flags & Passive)) {
+        commitHookPassiveMountEffects(
+          finishedWork,
+          HookPassive | HookHasEffect,
+        );
+      }
+      break;
+    }
+
+    case HostRoot: {
+      recursivelyTraversePassiveMountEffects(finishedRoot, finishedWork);
+      break;
+    }
+
+    default:
+      break;
+  }
+}
+
+/**
+ * 提交执行 useEffect（挂载阶段）
+ *
+ * @author lihh
+ * @param finishedWork 完成的work
+ * @param hookFlags effect 标识
+ */
+function commitHookPassiveMountEffects(finishedWork, hookFlags) {
+  commitHookEffectListMount(hookFlags, finishedWork);
+}
+
+/**
+ *
+ * @param flags
+ * @param finishedWork
+ */
+function commitHookEffectListMount(flags, finishedWork) {
+  // 更新队列
+  const updateQueue = finishedWork.updateQueue;
+  // 拿到第一个effect
+  const lastEffect = updateQueue !== null ? updateQueue.lastEffect : null;
+
+  if (lastEffect !== null) {
+    // 此时这个是第一个effect
+    const firstEffect = lastEffect.next;
+    let effect = firstEffect;
+
+    do {
+      if ((effect.tag & flags) === flags) {
+        const create = effect.create;
+        effect.destroy = create();
+      }
+      effect = effect.next;
+    } while (effect !== firstEffect);
+  }
+}
+
+/**
+ * 递归遍历 消极的卸载effect 函数
+ *
+ * @author lihh
+ * @param parentFiber 父类fiber
+ */
+function recursivelyTraversePassiveUnmountEffects(parentFiber) {
+  // 判断fiber 上是否有effect
+  if (!!(parentFiber.subTreeFlags & Passive)) {
+    let child = parentFiber.child;
+    for (; child !== null; child = child.sibling)
+      commitPassiveUnmountOnFiber(child);
+  }
+}
 
 /**
  * 递归遍历删除的effect

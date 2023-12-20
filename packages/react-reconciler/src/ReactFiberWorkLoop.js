@@ -1,13 +1,25 @@
 import { createWorkInProgress } from "react-reconciler/src/ReactFiber";
 import { beginWork } from "react-reconciler/src/ReactFiberBeginWork";
 import { completeWork } from "react-reconciler/src/ReactFiberCompleteWork";
-import { MutationMask, NoFlags } from "react-reconciler/src/ReactFiberFlags";
-import { commitMutationEffectsOnFiber } from "react-reconciler/src/ReactFiberCommitWork";
+import {
+  MutationMask,
+  NoFlags,
+  Passive,
+} from "react-reconciler/src/ReactFiberFlags";
+import {
+  commitMutationEffects,
+  commitMutationEffectsOnFiber,
+  commitPassiveMountEffects,
+  commitPassiveUnmountEffects,
+} from "react-reconciler/src/ReactFiberCommitWork";
 import { finishQueueingConcurrentUpdates } from "react-reconciler/src/ReactFiberConcurrentUpdates";
 import { scheduleTaskForRootDuringMicrotask } from "react-reconciler/src/ReactFiberRootScheduler";
+import { scheduleCallback } from "react-reconciler/src/Scheduler";
 
 let workInProgressRoot = null;
 let workInProgress = null;
+let rootDoesHavePassiveEffects = false;
+let rootWithPendingPassiveEffects = null;
 
 /**
  * 表示请求更新的赛道
@@ -19,6 +31,19 @@ let workInProgress = null;
 export function requestUpdateLane(fiber) {
   // todo
   return 1;
+}
+
+/**
+ * 刷新 消极的effect
+ *
+ * @author lihh
+ */
+export function flushPassiveEffects() {
+  if (rootWithPendingPassiveEffects !== null) {
+    const root = rootWithPendingPassiveEffects;
+    commitPassiveUnmountEffects(root.current);
+    commitPassiveMountEffects(root, root.current);
+  }
 }
 
 /**
@@ -74,14 +99,34 @@ export function ensureRootIsScheduled(root) {
 function commitRoot(root) {
   const { finishedWork } = root;
 
+  // 表示fiber本身有值 或是 子fiber上有值
+  if (
+    (finishedWork.subTreeFlags & Passive) !== NoFlags ||
+    (finishedWork.flags & Passive) !== NoFlags
+  ) {
+    if (!rootDoesHavePassiveEffects) {
+      rootDoesHavePassiveEffects = true;
+      // 表示useEffect 是放到宏任务之后执行的
+      // 本身方法【scheduleCallback】 就是一个宏任务
+      scheduleCallback(flushPassiveEffects);
+    }
+  }
+
   // 判断子元素是否存在副作用
   const subtreeHasEffects =
     (finishedWork.subTreeFlags & MutationMask) !== NoFlags;
   // 判断自身是否有副作用
   const rootHasEffect = (finishedWork.flags & MutationMask) !== NoFlags;
 
-  if (subtreeHasEffects || rootHasEffect)
-    commitMutationEffectsOnFiber(finishedWork, root);
+  if (subtreeHasEffects || rootHasEffect) {
+    commitMutationEffects(finishedWork, root);
+    root.current = finishedWork;
+
+    if (rootDoesHavePassiveEffects) {
+      rootDoesHavePassiveEffects = false;
+      rootWithPendingPassiveEffects = root;
+    }
+  }
   root.current = finishedWork;
 }
 

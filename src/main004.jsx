@@ -2,7 +2,7 @@ import { createRoot } from "react-dom/client";
 import { useReducer, useState, useEffect } from "react/src/React";
 
 function Counter() {
-  const [number, setNumber] = useState(0);
+  const [number, setNumber] = React.useState(0);
   useEffect(() => {
     console.log("useEffect1");
     return () => {
@@ -14,7 +14,7 @@ function Counter() {
     return () => {
       console.log("destroy useEffect2");
     };
-  }, []);
+  });
   useEffect(() => {
     console.log("useEffect3");
     return () => {

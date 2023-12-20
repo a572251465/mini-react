@@ -14,8 +14,9 @@
 - [x] 实现 useReducer 更新 以及commit
 - [x] 实现 useState 逻辑
 - [x] 实现 DOM DIFF 逻辑
-- [ ] 实现 useEffect 逻辑
+- [x] 实现 useEffect 逻辑
 - [ ] 实现 useLayoutEffect逻辑
+- [ ] 实现 异步调度
 
 ## 面试题
 
@@ -30,3 +31,24 @@
 ![hookMountOrUpdate.png](images%2FhookMountOrUpdate.png)
 
 ![fiberAndHook.png](images%2FfiberAndHook.png)
+
+## 3. diff 比较核心关键点
+
+> - 第一轮比较 A 和 A，相同可以复用，更新，然后比较 B 和 C，key 不同直接跳出第一个循环
+> - 把剩下 oldFiber 的放入 existingChildren 这个 map 中 然后声明一个lastPlacedIndex变量，表示不需要移动的老节点的索引
+>   继续循环剩下的虚拟 DOM 节点
+> - 如果能在 map 中找到相同 key 相同 type 的节点则可以复用老 fiber,并把此老 fiber 从 map 中删除
+> - 如果能在 map 中找不到相同 key 相同 type 的节点则创建新的 fiber
+> - 如果是复用老的 fiber,则判断老 fiber 的索引是否小于 lastPlacedIndex，如果是要移动老 fiber，不变
+> - 如果是复用老的 fiber,则判断老 fiber 的索引是否小于 lastPlacedIndex，如果否则更新 lastPlacedIndex 为老 fiber 的 index
+> - 把所有的 map 中剩下的 fiber 全部标记为删除
+
+![diff-dom.png](images%2Fdiff-dom.png)
+
+## 4. effect 核心结构
+
+![effect.png](images%2Feffect.png)
+
+> 1. 【currentlyRenderingFiber】 代表着执行函数的fiber。函数中可能包含多个effect
+> 2. 在fiber中 使用字段【updateQueue】连接着一个 effect循环链表
+> 3. 每个函数中的effect， 是通过字段【memoizedState】来连接的单项链表
