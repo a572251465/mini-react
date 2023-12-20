@@ -5,10 +5,14 @@ import { enqueueConcurrentHookUpdate } from "react-reconciler/src/ReactFiberConc
 import { assign } from "shared/assign";
 import { isFunction } from "shared/isFunction";
 import { is } from "shared/is";
-import { Passive as PassiveEffect } from "./ReactFiberFlags";
+import {
+  Passive as PassiveEffect,
+  Update as UpdateEffect,
+} from "./ReactFiberFlags";
 import {
   HasEffect as HookHasEffect,
   Passive as HookPassive,
+  Layout as HookLayout,
 } from "./ReactHookEffectTags";
 
 let currentlyRenderingFiber = null;
@@ -26,6 +30,28 @@ let currentHook = null;
  */
 function mountEffect(create, deps) {
   return mountEffectImpl(PassiveEffect, HookPassive, create, deps);
+}
+
+/**
+ * useLayoutEffect 挂载的方法
+ *
+ * @author lihh
+ * @param create effect内部执行的函数
+ * @param deps 变更的依赖项
+ */
+function mountLayoutEffect(create, deps) {
+  return mountEffectImpl(UpdateEffect, HookLayout, create, deps);
+}
+
+/**
+ * useLayoutEffect 更新的方法
+ *
+ * @author lihh
+ * @param create effect内部执行的函数
+ * @param deps 变更的依赖项
+ */
+function updateLayoutEffect(create, deps) {
+  return updateEffectImpl(PassiveEffect, HookLayout, create, deps);
 }
 
 /**
@@ -425,11 +451,13 @@ const HooksDispatcherOnMountInDEV = {
   useReducer: mountReducer,
   useState: mountState,
   useEffect: mountEffect,
+  useLayoutEffect: mountLayoutEffect,
 };
 const HooksDispatcherOnUpdateInDEV = {
   useReducer: updateReducer,
   useState: updateState,
   useEffect: updateEffect,
+  useLayoutEffect: updateLayoutEffect,
 };
 
 /**

@@ -9,6 +9,7 @@ import {
   Passive,
   Placement,
   Update,
+  LayoutMask,
 } from "react-reconciler/src/ReactFiberFlags";
 import {
   appendChild,
@@ -19,6 +20,7 @@ import {
 import {
   Passive as HookPassive,
   HasEffect as HookHasEffect,
+  Layout as HookLayout,
 } from "react-reconciler/src/ReactHookEffectTags";
 
 let hostParent = null;
@@ -530,6 +532,8 @@ function commitUpdateEffects(finishedWork) {
  * @param root 根节点
  */
 export function commitMutationEffectsOnFiber(finishedWork, root) {
+  const flags = finishedWork.flags;
+
   // 针对tag 进行判断
   switch (finishedWork.tag) {
     case HostRoot:
@@ -537,6 +541,14 @@ export function commitMutationEffectsOnFiber(finishedWork, root) {
     case HostText: {
       recursivelyTraverseMutationEffects(root, finishedWork);
       commitReconciliationEffects(finishedWork);
+
+      // layoutEffect 执行卸载
+      if (!!(flags & Update))
+        commitHookEffectListUnmount(
+          HookLayout | HookHasEffect,
+          finishedWork,
+          finishedWork.return,
+        );
       break;
     }
     case HostComponent: {
@@ -548,4 +560,78 @@ export function commitMutationEffectsOnFiber(finishedWork, root) {
       break;
     }
   }
+}
+
+/**
+ * 提交 layoutEffect
+ *
+ * @author lihh
+ * @param finishedWork 完成的工作 work
+ * @param root 根节点
+ */
+export function commitLayoutEffects(finishedWork, root) {
+  const current = finishedWork.alternate;
+  // 在fiber上 提交layoutEffect
+  commitLayoutEffectOnFiber(root, current, finishedWork);
+}
+
+/**
+ * 在fiber上 提交layoutEffect
+ *
+ * @author lihh
+ * @param finishedRoot 结束的root根节点
+ * @param current 当前fiber
+ * @param finishedWork 完成work
+ */
+function commitLayoutEffectOnFiber(finishedRoot, current, finishedWork) {
+  const flags = finishedWork.flags;
+
+  switch (finishedWork.tag) {
+    case FunctionComponent: {
+      // 递归遍历子fiber
+      recursivelyTraverseLayoutEffects(finishedRoot, finishedWork);
+
+      // fiber上包含 useLayoutEffect
+      if (!!(flags & Update)) {
+        commitHookLayoutEffects(finishedWork, HookLayout | HookHasEffect);
+      }
+      break;
+    }
+
+    case HostRoot: {
+      recursivelyTraverseLayoutEffects(finishedRoot, finishedWork);
+      break;
+    }
+    default:
+      break;
+  }
+}
+
+/**
+ * 递归遍历子节点
+ *
+ * @author lihh
+ * @param root root 根节点
+ * @param parentFiber 父类fiber
+ */
+function recursivelyTraverseLayoutEffects(root, parentFiber) {
+  if (!!(parentFiber.subTreeFlags & LayoutMask)) {
+    let child = parentFiber.child;
+    while (child !== null) {
+      const current = child.alternate;
+      commitLayoutEffectOnFiber(root, current, child);
+      child = child.sibling;
+    }
+  }
+}
+
+/**
+ * 提交 hook上 layoutEffect
+ *
+ * @author lihh
+ * @param finishedWork 完成的work
+ * @param hookFlags hook上标识
+ */
+function commitHookLayoutEffects(finishedWork, hookFlags) {
+  commitHookEffectListMount(hookFlags, finishedWork);
 }

@@ -15,7 +15,7 @@
 - [x] 实现 useState 逻辑
 - [x] 实现 DOM DIFF 逻辑
 - [x] 实现 useEffect 逻辑
-- [ ] 实现 useLayoutEffect逻辑
+- [x] 实现 useLayoutEffect逻辑
 - [ ] 实现 异步调度
 
 ## 面试题
@@ -52,3 +52,11 @@
 > 1. 【currentlyRenderingFiber】 代表着执行函数的fiber。函数中可能包含多个effect
 > 2. 在fiber中 使用字段【updateQueue】连接着一个 effect循环链表
 > 3. 每个函数中的effect， 是通过字段【memoizedState】来连接的单项链表
+
+## 5. useLayoutEffect 核心
+
+> - 其函数签名与 useEffect 相同，但它会在所有的 DOM 变更之后同步调用 effect
+> - useEffect不会阻塞浏览器渲染，而 useLayoutEffect 会浏览器渲染
+> - useEffect会在浏览器渲染结束后执行,useLayoutEffect 则是在 DOM 更新完成后,浏览器绘制之前执行
+
+![useLayoutEffect.png](images%2FuseLayoutEffect.png)

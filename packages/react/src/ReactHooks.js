@@ -43,3 +43,16 @@ export function useEffect(create, deps) {
   // 调用派发器上的useEffect（挂载 以及更新时的派发器不同）
   return dispatcher.useEffect(create, deps);
 }
+
+/**
+ * 实现调用useLayoutEffect的方法
+ *
+ * @author lihh
+ * @param create effect中执行的函数
+ * @param deps 再次执行effect 依赖的变量
+ */
+export function useLayoutEffect(create, deps) {
+  const dispatcher = resolveDispatcher();
+  // 调用派发器上的useLayoutEffect（挂载 以及更新时的派发器不同）
+  return dispatcher.useLayoutEffect(create, deps);
+}

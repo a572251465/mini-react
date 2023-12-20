@@ -7,6 +7,7 @@ import {
   Passive,
 } from "react-reconciler/src/ReactFiberFlags";
 import {
+  commitLayoutEffects,
   commitMutationEffects,
   commitMutationEffectsOnFiber,
   commitPassiveMountEffects,
@@ -120,6 +121,8 @@ function commitRoot(root) {
 
   if (subtreeHasEffects || rootHasEffect) {
     commitMutationEffects(finishedWork, root);
+    // layoutEffect 是在dom更新后 浏览器绘制前执行。 并不是说基于微任务。而是执行的时机跟微任务很像而已
+    commitLayoutEffects(finishedWork, root);
     root.current = finishedWork;
 
     if (rootDoesHavePassiveEffects) {

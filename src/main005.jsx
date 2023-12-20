@@ -1,10 +1,5 @@
 import { createRoot } from "react-dom/client";
-import {
-  useReducer,
-  useState,
-  useEffect,
-  useLayoutEffect,
-} from "react/src/React";
+import { useReducer, useState, useEffect } from "react/src/React";
 
 function Counter() {
   const [number, setNumber] = useState(0);
@@ -14,12 +9,12 @@ function Counter() {
       console.log("destroy useEffect1");
     };
   });
-  useLayoutEffect(() => {
-    console.log("useLayoutEffect2");
+  useEffect(() => {
+    console.log("useEffect2");
     return () => {
-      console.log("destroy useLayoutEffect2");
+      console.log("destroy useEffect2");
     };
-  });
+  }, []);
   useEffect(() => {
     console.log("useEffect3");
     return () => {
@@ -27,13 +22,13 @@ function Counter() {
     };
   });
   return (
-    <div
-      onClick={() => {
-        setNumber(number + 1);
-      }}
-    >
-      {number}
-    </div>
+      <div
+          onClick={() => {
+            setNumber(number + 1);
+          }}
+      >
+        {number}
+      </div>
   );
 }
 let element = <Counter />;

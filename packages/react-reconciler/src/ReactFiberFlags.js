@@ -20,3 +20,4 @@ export const Snapshot = /*                     */ 0b0000000000000000010000000000
 export const Passive = /*                      */ 0b0000000000000000100000000000;
 
 export const MutationMask = Placement | Update;
+export const LayoutMask = Update;
