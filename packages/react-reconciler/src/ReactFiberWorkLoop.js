@@ -9,13 +9,15 @@ import {
 import {
   commitLayoutEffects,
   commitMutationEffects,
-  commitMutationEffectsOnFiber,
   commitPassiveMountEffects,
   commitPassiveUnmountEffects,
 } from "react-reconciler/src/ReactFiberCommitWork";
 import { finishQueueingConcurrentUpdates } from "react-reconciler/src/ReactFiberConcurrentUpdates";
 import { scheduleTaskForRootDuringMicrotask } from "react-reconciler/src/ReactFiberRootScheduler";
-import { scheduleCallback } from "react-reconciler/src/Scheduler";
+import {
+  scheduleCallback as Scheduler_scheduleCallback,
+  NormalPriority as NormalSchedulerPriority,
+} from "scheduler/src/Scheduler";
 
 let workInProgressRoot = null;
 let workInProgress = null;
@@ -109,7 +111,7 @@ function commitRoot(root) {
       rootDoesHavePassiveEffects = true;
       // 表示useEffect 是放到宏任务之后执行的
       // 本身方法【scheduleCallback】 就是一个宏任务
-      scheduleCallback(flushPassiveEffects);
+      Scheduler_scheduleCallback(NormalSchedulerPriority, flushPassiveEffects);
     }
   }
 

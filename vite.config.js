@@ -11,6 +11,7 @@ export default defineConfig({
       "react-dom": path.resolve("packages/react-dom"),
       "react-reconciler": path.resolve("packages/react-reconciler"),
       "react-dom-bindings": path.resolve("packages/react-dom-bindings"),
+      scheduler: path.resolve("packages/scheduler"),
     },
   },
 });

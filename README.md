@@ -16,7 +16,12 @@
 - [x] 实现 DOM DIFF 逻辑
 - [x] 实现 useEffect 逻辑
 - [x] 实现 useLayoutEffect逻辑
-- [ ] 实现 异步调度
+- [x] 实现 异步调度
+- [ ] 实现 lane模型初次渲染
+- [ ] 实现 并发渲染
+- [ ] 实现 useRef 逻辑
+- [ ] 实现 useContext 逻辑
+- [ ] 实现 类组件的逻辑
 
 ## 面试题
 
