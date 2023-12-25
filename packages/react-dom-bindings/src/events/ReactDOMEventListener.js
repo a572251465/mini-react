@@ -1,6 +1,11 @@
 import { getEventTarget } from "react-dom-bindings/src/events/getEventTarget";
 import { dispatchEventForPluginEventSystem } from "react-dom-bindings/src/events/DOMPluginEventSystem";
 import { getClosestInstanceFromNode } from "react-dom-bindings/src/client/ReactDOMComponentTree";
+import {
+  ContinuousEventPriority,
+  DefaultEventPriority,
+  DiscreteEventPriority,
+} from "react-reconciler/src/ReactEventPriorities";
 
 /**
  * 创建包裹事件的方法
@@ -69,4 +74,21 @@ function dispatchEvent(
     targetInst,
     targetContainer,
   );
+}
+
+/**
+ * 拿到 事件优先级
+ *
+ * @author lihh
+ * @param domEventName  dom 事件名称
+ */
+export function getEventPriority(domEventName) {
+  switch (domEventName) {
+    case "click":
+      return DiscreteEventPriority;
+    case "drag":
+      return ContinuousEventPriority;
+    default:
+      return DefaultEventPriority;
+  }
 }

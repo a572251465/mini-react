@@ -8,7 +8,6 @@ const App = () => {
     <div
       key="a1"
       onClick={() => {
-        debugger;
         setState(() => state + 1);
       }}
     >

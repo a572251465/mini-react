@@ -70,10 +70,25 @@ export function enqueueConcurrentHookUpdate(fiber, queue, update) {
  * @param queue hook 队列
  * @param update hook状态的值
  */
-function enqueueUpdate(fiber, queue, update) {
+function enqueueUpdate(fiber, queue, update, lane) {
   concurrentQueues[concurrentQueuesIndex++] = fiber;
   concurrentQueues[concurrentQueuesIndex++] = queue;
   concurrentQueues[concurrentQueuesIndex++] = update;
+  concurrentQueues[concurrentQueuesIndex++] = lane;
+}
+
+/**
+ * 并发的class 刚更新
+ *
+ * @au lihh
+ * @param fiber 运行的fiber
+ * @param queue 队列
+ * @param update 更新内容
+ * @param lane 赛道
+ */
+export function enqueueConcurrentClassUpdate(fiber, queue, update, lane) {
+  enqueueUpdate(fiber, queue, update, lane);
+  return getRootForUpdatedFiber(fiber);
 }
 
 /**
@@ -90,6 +105,7 @@ export function finishQueueingConcurrentUpdates() {
     const fiber = concurrentQueues[i++];
     const queue = concurrentQueues[i++];
     const update = concurrentQueues[i++];
+    const lane = concurrentQueues[i++];
 
     // 表示数组中三个为一组，各自维护各自的 queue（循环链表）
     if (queue !== null && update !== null) {

@@ -44,12 +44,15 @@ export function reconcileChildren(current, workInProgress, nextChildren) {
  * @author lihh
  * @param current old root fiber
  * @param workInProgress new root fiber
+ * @param renderLanes 渲染的赛道
  */
-function updateHostRoot(current, workInProgress) {
+function updateHostRoot(current, workInProgress, renderLanes) {
+  // 未生效的属性
+  const nextProps = workInProgress.pendingProps;
   // 克隆更新队列
   cloneUpdateQueue(current, workInProgress);
   // 处理更新队列
-  processUpdateQueue(workInProgress);
+  processUpdateQueue(workInProgress, nextProps, renderLanes);
 
   const nextState = workInProgress.memoizedState;
   const nextChildren = nextState.element;
@@ -139,8 +142,9 @@ function updateFunctionComponent(
  * @author lihh
  * @param current old root fiber
  * @param workInProgress new root fiber
+ * @param renderLanes 表示渲染 赛道
  */
-export function beginWork(current, workInProgress) {
+export function beginWork(current, workInProgress, renderLanes) {
   const tag = workInProgress.tag;
 
   // 渲染的时候 判断是何种标签
@@ -151,6 +155,7 @@ export function beginWork(current, workInProgress) {
         current,
         workInProgress,
         workInProgress.type,
+        renderLanes,
       );
     case LazyComponent: {
       return null;
@@ -168,12 +173,13 @@ export function beginWork(current, workInProgress) {
         workInProgress,
         Component,
         resolvedProps,
+        renderLanes,
       );
     }
     case HostComponent:
-      return updateHostComponent(current, workInProgress);
+      return updateHostComponent(current, workInProgress, renderLanes);
     case HostRoot:
-      return updateHostRoot(current, workInProgress);
+      return updateHostRoot(current, workInProgress, renderLanes);
   }
 
   return null;

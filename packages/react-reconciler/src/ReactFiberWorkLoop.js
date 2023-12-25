@@ -13,27 +13,53 @@ import {
   commitPassiveUnmountEffects,
 } from "react-reconciler/src/ReactFiberCommitWork";
 import { finishQueueingConcurrentUpdates } from "react-reconciler/src/ReactFiberConcurrentUpdates";
-import { scheduleTaskForRootDuringMicrotask } from "react-reconciler/src/ReactFiberRootScheduler";
 import {
   scheduleCallback as Scheduler_scheduleCallback,
+  ImmediatePriority as ImmediateSchedulerPriority,
+  UserBlockingPriority as UserBlockingSchedulerPriority,
   NormalPriority as NormalSchedulerPriority,
+  IdlePriority as IdleSchedulerPriority,
 } from "scheduler/src/Scheduler";
+import {
+  getHighestPriorityLane,
+  getNextLanes,
+  includesBlockingLane,
+  markRootUpdated,
+  NoLane,
+  NoLanes,
+  SyncLane,
+} from "react-reconciler/src/ReactFiberLane";
+import {
+  ContinuousEventPriority,
+  DefaultEventPriority,
+  DiscreteEventPriority,
+  getCurrentUpdatePriority,
+  IdleEventPriority,
+  lanesToEventPriority,
+} from "react-reconciler/src/ReactEventPriorities";
+import { getCurrentEventPriority } from "react-dom-bindings/src/client/ReactDOMHostConfig";
 
 let workInProgressRoot = null;
 let workInProgress = null;
 let rootDoesHavePassiveEffects = false;
 let rootWithPendingPassiveEffects = null;
+// 工作中主节点渲染的赛道
+let workInProgressRootRenderLanes = NoLanes;
 
 /**
  * 表示请求更新的赛道
  *
  * @author lihh
- * @param fiber 表示执行更新的fiber
- * @return {number}
+ * @return {number} 返回更新时的赛道
  */
-export function requestUpdateLane(fiber) {
-  // todo
-  return 1;
+export function requestUpdateLane() {
+  // 拿到更新赛道（此赛道是通过set 方法可以指定的）
+  const updateLane = getCurrentUpdatePriority();
+  if (updateLane !== NoLane) return updateLane;
+
+  // 拿事件优先级（如果更新赛道拿不到的值的时候，拿事件赛道。默认是16）
+  const eventLane = getCurrentEventPriority();
+  return eventLane;
 }
 
 /**
@@ -54,14 +80,17 @@ export function flushPassiveEffects() {
  *
  * @author lihh
  * @param root 表示root 节点
+ * @param lanes 赛道
  */
-function prepareFreshStack(root) {
+function prepareFreshStack(root, lanes) {
   workInProgressRoot = root;
   // 表示新的工作线程
   const rootWorkInProgress = createWorkInProgress(root.current, null);
   // 表示工作中的progress
   workInProgress = rootWorkInProgress;
 
+  // 设置全局正在运行的赛道
+  workInProgressRootRenderLanes = lanes;
   finishQueueingConcurrentUpdates();
 
   return rootWorkInProgress;
@@ -76,6 +105,9 @@ function prepareFreshStack(root) {
  * @param lane
  */
 export function scheduleUpdateOnFiber(root, fiber, lane) {
+  // 标记 root节点的赛道
+  markRootUpdated(root, lane);
+
   // 表示确定root 节点的 调度
   ensureRootIsScheduled(root);
 }
@@ -87,10 +119,38 @@ export function scheduleUpdateOnFiber(root, fiber, lane) {
  * @param root 表示root fiber 节点
  */
 export function ensureRootIsScheduled(root) {
-  if (workInProgressRoot) return;
-  workInProgressRoot = root;
-  // 通过微任务 进行root节点的调度任务
-  scheduleTaskForRootDuringMicrotask(root);
+  // 拿到最新的赛道
+  const nextLanes = getNextLanes(root, NoLanes);
+  // 拿到最高级的优先级
+  const newCallbackPriority = getHighestPriorityLane(nextLanes);
+  // 此判断  是否是同步赛道
+  if (newCallbackPriority === SyncLane) {
+    // TODO
+  } else {
+    // 此变量定义 调度等级
+    let schedulerPriorityLevel;
+    switch (lanesToEventPriority(nextLanes)) {
+      case DiscreteEventPriority:
+        schedulerPriorityLevel = ImmediateSchedulerPriority;
+        break;
+      case ContinuousEventPriority:
+        schedulerPriorityLevel = UserBlockingSchedulerPriority;
+        break;
+      case DefaultEventPriority:
+        schedulerPriorityLevel = NormalSchedulerPriority;
+        break;
+      case IdleEventPriority:
+        schedulerPriorityLevel = IdleSchedulerPriority;
+        break;
+      default:
+        schedulerPriorityLevel = NormalSchedulerPriority;
+        break;
+    }
+    Scheduler_scheduleCallback(
+      schedulerPriorityLevel,
+      performConcurrentWorkOnRoot.bind(null, root),
+    );
+  }
 }
 
 /**
@@ -140,9 +200,20 @@ function commitRoot(root) {
  *
  * @author lihh
  * @param root fiber root节点
+ * @param didTimeout 过期时间
  */
-export function performConcurrentWorkOnRoot(root) {
-  renderRootSync(root);
+export function performConcurrentWorkOnRoot(root, didTimeout) {
+  // 获取下一个赛道
+  const lanes = getNextLanes(root, NoLanes);
+  if (lanes === NoLanes) return null;
+
+  // 是否应该时间分片
+  const shouldTimeSlice = !includesBlockingLane(root, lanes) && !didTimeout;
+  if (shouldTimeSlice) {
+    renderRootConcurrent(root, lanes);
+  } else {
+    renderRootSync(root, lanes);
+  }
 
   // 表示最终的work
   const finishedWork = root.current.alternate;
@@ -152,13 +223,23 @@ export function performConcurrentWorkOnRoot(root) {
 }
 
 /**
+ * root节点 并发渲染
+ *
+ * @author lihh
+ * @param root 根节点
+ * @param lanes 赛道
+ */
+function renderRootConcurrent(root, lanes) {}
+
+/**
  * 以同步的方式 渲染root fiber节点
  *
  * @author lihh
  * @param root root fiber 节点
+ * @param lanes 表示赛道
  */
-function renderRootSync(root) {
-  prepareFreshStack(root);
+function renderRootSync(root, lanes) {
+  prepareFreshStack(root, lanes);
 
   // 同步循环工作
   workLoopSync();
@@ -179,7 +260,7 @@ function performUnitOfWork(unitOfWork) {
   // current 旧fiber
   // unitOfWork 新fiber
   // 此时 next 表示儿子
-  let next = beginWork(current, unitOfWork);
+  let next = beginWork(current, unitOfWork, workInProgressRootRenderLanes);
   unitOfWork.memoizedProps = unitOfWork.pendingProps;
 
   // 如果儿子不存在的话 表示当前节点 已经完成fiber创建

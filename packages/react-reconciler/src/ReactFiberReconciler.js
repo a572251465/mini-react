@@ -28,10 +28,11 @@ export function createContainer(containerInfo, tag) {
  * @param container 表示 fiberRoot 节点
  */
 export function updateContainer(element, container) {
+  debugger
   // 表示 rootFiber 节点  FiberNode
   const current = container.current;
   // 请求更新的赛道 todo
-  const lane = requestUpdateLane(current);
+  const lane = requestUpdateLane();
 
   // 表示创建更新节点
   const update = createUpdate(lane);

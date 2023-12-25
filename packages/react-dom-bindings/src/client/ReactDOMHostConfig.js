@@ -7,6 +7,8 @@ import {
   precacheFiberNode,
   updateFiberProps,
 } from "react-dom-bindings/src/client/ReactDOMComponentTree";
+import { DefaultEventPriority } from "react-reconciler/src/ReactEventPriorities";
+import { getEventPriority } from "react-dom-bindings/src/events/ReactDOMEventListener";
 
 /**
  * 判断children 元素是否设置 text内容
@@ -134,4 +136,16 @@ export function commitUpdate(
 ) {
   updateProperties(domElement, updatePayload, type, oldProps, newProps);
   updateFiberProps(domElement, newProps);
+}
+
+/**
+ * 得到当前事件优先级
+ *
+ *@author lihh
+ */
+export function getCurrentEventPriority() {
+  const currentEvent = window.event;
+  if (currentEvent === undefined) return DefaultEventPriority;
+
+  return getEventPriority(currentEvent.type);
 }

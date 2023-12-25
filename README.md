@@ -65,3 +65,6 @@
 > - useEffect会在浏览器渲染结束后执行,useLayoutEffect 则是在 DOM 更新完成后,浏览器绘制之前执行
 
 ![useLayoutEffect.png](images%2FuseLayoutEffect.png)
+
+## 6. 赛道渲染 flow
+![render-flow.png](images%2Frender-flow.png)

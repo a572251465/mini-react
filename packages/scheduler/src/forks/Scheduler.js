@@ -215,4 +215,11 @@ function workLoop(initialTime) {
   else return false;
 }
 
-export { NormalPriority as unstable_NormalPriority, unstable_scheduleCallback };
+export {
+  NormalPriority as unstable_NormalPriority,
+  unstable_scheduleCallback,
+  ImmediatePriority as unstable_ImmediatePriority,
+  UserBlockingPriority as unstable_UserBlockingPriority,
+  LowPriority as unstable_LowPriority,
+  IdlePriority as unstable_IdlePriority,
+};
