@@ -1,14 +1,20 @@
 import { createRoot } from "react-dom/client";
-import { useState } from "react/src/React";
+import { useEffect, useState } from "react/src/React";
 
-function Counter() {
-  const [state, setState] = useState(0);
-
+function FunctionComponent() {
+  const [number, setNumber] = useState(0);
   return (
-    <button onClick={() => setState((state) => state + 1)}>{state}</button>
+    <button
+      onClick={() => {
+        debugger;
+        setNumber((number) => number + 1);
+      }}
+    >
+      {number}
+    </button>
   );
 }
-let element = <Counter />;
+let element = <FunctionComponent />;
 
 const root = createRoot(document.getElementById("root"));
 root.render(element);

@@ -1,4 +1,6 @@
 // 总的赛道
+import { allowConcurrentByDefault } from "shared/ReactFeatureFlags";
+
 export const TotalLanes = 31;
 // 无赛道的时候
 export const NoLanes = 0b0000000000000000000000000000000;
@@ -92,6 +94,9 @@ export function includesNonIdleWork(lanes) {
  * @return {boolean} 判断是否包含
  */
 export function includesBlockingLane(root, lanes) {
+  // 如果是允许默认的情况下  就是直接返回false
+  if (allowConcurrentByDefault) return false;
+
   // 说明 输入 以及默认都是阻塞的
   const SyncDefaultLanes = InputContinuousLane | DefaultLane;
   return (lanes & SyncDefaultLanes) !== NoLanes;

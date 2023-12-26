@@ -222,4 +222,5 @@ export {
   UserBlockingPriority as unstable_UserBlockingPriority,
   LowPriority as unstable_LowPriority,
   IdlePriority as unstable_IdlePriority,
+  shouldYieldToHost as unstable_shouldYield,
 };

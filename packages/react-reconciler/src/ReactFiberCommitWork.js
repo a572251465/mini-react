@@ -504,8 +504,8 @@ function commitUpdateEffects(finishedWork) {
     // 拿到的这是一个html 节点
     const instance = finishedWork.stateNode;
     if (instance !== null) {
-      const newProps = finishedWork.memoizedState;
-      const oldProps = current !== null ? current.memoizedState : newProps;
+      const newProps = finishedWork.memoizedProps;
+      const oldProps = current !== null ? current.memoizedProps : newProps;
       const type = finishedWork.type;
       const updatePayload = finishedWork.updateQueue;
       finishedWork.updateQueue = null;

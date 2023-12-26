@@ -30,7 +30,7 @@ export function createContainer(containerInfo, tag) {
 export function updateContainer(element, container) {
   // 表示 rootFiber 节点  FiberNode
   const current = container.current;
-  // 请求更新的赛道 todo
+  // 请求更新的赛道
   const lane = requestUpdateLane();
 
   // 表示创建更新节点

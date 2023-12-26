@@ -264,9 +264,10 @@ function createHookFactory(transferParams = {}) {
  * @param action 用户主动传递的 action的内容
  */
 function dispatchReducerAction(fiber, queue, action) {
+  const lane = requestUpdateLane();
   const update = { action, next: null };
-  const root = enqueueConcurrentHookUpdate(fiber, queue, update);
-  scheduleUpdateOnFiber(root, fiber);
+  const root = enqueueConcurrentHookUpdate(fiber, queue, update, lane);
+  scheduleUpdateOnFiber(root, fiber, lane);
 }
 
 /**

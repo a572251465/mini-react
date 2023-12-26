@@ -50,6 +50,14 @@ let rootWithPendingPassiveEffects = null;
 // 工作中主节点渲染的赛道
 let workInProgressRootRenderLanes = NoLanes;
 
+// 表示root 节点渲染状态
+/* 表示渲染中的状态 */
+const RootInProgress = 0;
+/* 表示 root节点 渲染完成的状态  */
+const RootCompleted = 5;
+/* 表示渲染过程中当前存在的状态 */
+let workInProgressRootExitStatus = RootInProgress;
+
 /**
  * 表示请求更新的赛道
  *
@@ -125,8 +133,16 @@ export function scheduleUpdateOnFiber(root, fiber, lane) {
 export function ensureRootIsScheduled(root) {
   // 拿到最新的赛道
   const nextLanes = getNextLanes(root, NoLanes);
+  // 判断是否存在优先级
+  if (nextLanes === NoLanes) {
+    root.callbackNode = null;
+    root.callbackPriority = NoLane;
+    return;
+  }
+
   // 拿到最高级的优先级
   const newCallbackPriority = getHighestPriorityLane(nextLanes);
+  let newCallbackNode;
   // 此判断  是否是同步赛道
   if (newCallbackPriority === SyncLane) {
     // 表示同步调度的回调
@@ -134,6 +150,8 @@ export function ensureRootIsScheduled(root) {
     // 同步任务执行结束后，利用微任务的特征，来进行状态清除
     // 表示同步执行结束后 要求异步来进行commit
     queueMicrotask(flushSyncCallbacks);
+
+    newCallbackNode = null;
   } else {
     // 此变量定义 调度等级
     let schedulerPriorityLevel;
@@ -154,10 +172,12 @@ export function ensureRootIsScheduled(root) {
         schedulerPriorityLevel = NormalSchedulerPriority;
         break;
     }
-    Scheduler_scheduleCallback(
+    // 调用此方法 返回的是newTask
+    newCallbackNode = Scheduler_scheduleCallback(
       schedulerPriorityLevel,
       performConcurrentWorkOnRoot.bind(null, root),
     );
+    root.callbackNode = newCallbackNode;
   }
 }
 
@@ -187,6 +207,11 @@ function performSyncWorkOnRoot(root) {
  */
 function commitRoot(root) {
   const { finishedWork } = root;
+  // 设置一些初期值
+  root.callbackNode = null;
+  root.callbackPriority = NoLane;
+  workInProgressRoot = null;
+  workInProgressRootRenderLanes = NoLanes;
 
   // 表示fiber本身有值 或是 子fiber上有值
   if (
@@ -229,23 +254,36 @@ function commitRoot(root) {
  * @param didTimeout 过期时间
  */
 export function performConcurrentWorkOnRoot(root, didTimeout) {
+  // 此时就是newTask（其实就是放到小顶堆的task，因为返回值是同步的，但是方法调用是通过宏任务是异步的）
+  /**
+   * callback: null
+   * expirationTime: 277497.3000000119
+   * id: 1
+   * priorityLevel: 3
+   * sortIndex: 277497.3000000119
+   * startTime: 272497.3000000119
+   */
+  const originalCallbackNode = root.callbackNode;
   // 获取下一个赛道
   const lanes = getNextLanes(root, NoLanes);
   if (lanes === NoLanes) return null;
 
   // 是否应该时间分片
   const shouldTimeSlice = !includesBlockingLane(root, lanes) && !didTimeout;
-  if (shouldTimeSlice) {
-    renderRootConcurrent(root, lanes);
-  } else {
-    renderRootSync(root, lanes);
+  const exitStatus = shouldTimeSlice
+    ? renderRootConcurrent(root, lanes)
+    : renderRootSync(root, lanes);
+
+  // 此时的渲染状态 不是0 就是5. 所以当状态不是0的时候，说明已经完成任务了
+  if (exitStatus !== RootInProgress) {
+    const finishedWork = root.current.alternate;
+    root.finishedWork = finishedWork;
+    commitRoot(root);
   }
-
-  // 表示最终的work
-  const finishedWork = root.current.alternate;
-  root.finishedWork = finishedWork;
-
-  commitRoot(root);
+  if (root.callbackNode === originalCallbackNode) {
+    return performConcurrentWorkOnRoot.bind(null, root);
+  }
+  return null;
 }
 
 /**
@@ -255,7 +293,32 @@ export function performConcurrentWorkOnRoot(root, didTimeout) {
  * @param root 根节点
  * @param lanes 赛道
  */
-function renderRootConcurrent(root, lanes) {}
+function renderRootConcurrent(root, lanes) {
+  // 函数方法【prepareFreshStack】 只能执行一次
+  // workInProgressRoot !== root  因为只能是第一次等于root
+  // 字段【workInProgressRootRenderLanes】的值 是进入方法【prepareFreshStack】赋值的，如果不是特定的值的话，说明就没有进去过
+  if (workInProgressRoot !== root || workInProgressRootRenderLanes !== lanes) {
+    prepareFreshStack(root, lanes);
+  }
+
+  // 工作循环并发
+  workLoopConcurrent();
+  if (workInProgress !== null) {
+    return RootInProgress;
+  }
+  workInProgressRoot = null;
+  workInProgressRootRenderLanes = NoLanes;
+  return workInProgressRootExitStatus;
+}
+
+/**
+ * 工作循环  并发执行
+ *
+ * @author lihh
+ */
+function workLoopConcurrent() {
+  performUnitOfWork(workInProgress);
+}
 
 /**
  * 以同步的方式 渲染root fiber节点
@@ -265,11 +328,13 @@ function renderRootConcurrent(root, lanes) {}
  * @param lanes 表示赛道
  */
 function renderRootSync(root, lanes) {
-  prepareFreshStack(root, lanes);
+  if (workInProgressRoot !== root || workInProgressRootRenderLanes !== lanes)
+    prepareFreshStack(root, lanes);
 
   // 同步循环工作
   workLoopSync();
   workInProgressRoot = null;
+  return workInProgressRootExitStatus;
 }
 
 /**
@@ -326,6 +391,10 @@ function completeUnitOfWork(unitOfWork) {
     completedWork = returnFiber;
     workInProgress = completedWork;
   } while (completedWork != null);
+
+  // 设置完成的状态
+  if (workInProgressRootExitStatus === RootInProgress)
+    workInProgressRootExitStatus = RootCompleted;
 }
 
 /**
