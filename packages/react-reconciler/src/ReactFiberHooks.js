@@ -1,6 +1,9 @@
 // 表示当前渲染的fiber
 import { ReactCurrentDispatcher } from "react/src/ReactCurrentDispatcher";
-import { scheduleUpdateOnFiber } from "react-reconciler/src/ReactFiberWorkLoop";
+import {
+  requestUpdateLane,
+  scheduleUpdateOnFiber,
+} from "react-reconciler/src/ReactFiberWorkLoop";
 import { enqueueConcurrentHookUpdate } from "react-reconciler/src/ReactFiberConcurrentUpdates";
 import { assign } from "shared/assign";
 import { isFunction } from "shared/isFunction";
@@ -275,7 +278,11 @@ function dispatchReducerAction(fiber, queue, action) {
  * @param action 状态/ 动作
  */
 function dispatchSetState(fiber, queue, action) {
+  // 拿到更新时的赛道
+  const lane = requestUpdateLane();
+
   const update = {
+    lane,
     action,
     next: null,
     // 是否是紧急状态
@@ -296,8 +303,9 @@ function dispatchSetState(fiber, queue, action) {
   // 判断状态是否变化
   if (is(eagerState, currentState)) return;
 
-  const root = enqueueConcurrentHookUpdate(fiber, queue, update);
-  scheduleUpdateOnFiber(root, fiber);
+  // 往队列中添加并发更新内容
+  const root = enqueueConcurrentHookUpdate(fiber, queue, update, lane);
+  scheduleUpdateOnFiber(root, fiber, lane);
 }
 
 /**

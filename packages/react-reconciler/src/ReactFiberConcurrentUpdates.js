@@ -56,9 +56,10 @@ function getRootForUpdatedFiber(sourceFiber) {
  * @param fiber 当前执行的fiber
  * @param queue 更新队列
  * @param update hook的状态
+ * @param lane 表示赛道
  */
-export function enqueueConcurrentHookUpdate(fiber, queue, update) {
-  enqueueUpdate(fiber, queue, update);
+export function enqueueConcurrentHookUpdate(fiber, queue, update, lane) {
+  enqueueUpdate(fiber, queue, update, lane);
   return getRootForUpdatedFiber(fiber);
 }
 

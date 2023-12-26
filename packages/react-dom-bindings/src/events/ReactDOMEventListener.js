@@ -5,6 +5,8 @@ import {
   ContinuousEventPriority,
   DefaultEventPriority,
   DiscreteEventPriority,
+  getCurrentUpdatePriority,
+  setCurrentUpdatePriority,
 } from "react-reconciler/src/ReactEventPriorities";
 
 /**
@@ -43,7 +45,16 @@ function dispatchDiscreteEvent(
   container,
   nativeEvent,
 ) {
-  dispatchEvent(domEventName, eventSystemFlags, container, nativeEvent);
+  // 先拿到上一个优先级（从全局执行函数中拿去）
+  const previousPriority = getCurrentUpdatePriority();
+  try {
+    // 设置派发  新的优先级（设置离散型 事件状态）,点击事件 默认状态是1
+    setCurrentUpdatePriority(DiscreteEventPriority);
+    dispatchEvent(domEventName, eventSystemFlags, container, nativeEvent);
+  } finally {
+    // 再次换原
+    setCurrentUpdatePriority(previousPriority);
+  }
 }
 
 /**

@@ -38,6 +38,10 @@ import {
   lanesToEventPriority,
 } from "react-reconciler/src/ReactEventPriorities";
 import { getCurrentEventPriority } from "react-dom-bindings/src/client/ReactDOMHostConfig";
+import {
+  flushSyncCallbacks,
+  scheduleSyncCallback,
+} from "react-reconciler/src/ReactFiberSyncTaskQueue";
 
 let workInProgressRoot = null;
 let workInProgress = null;
@@ -125,7 +129,11 @@ export function ensureRootIsScheduled(root) {
   const newCallbackPriority = getHighestPriorityLane(nextLanes);
   // 此判断  是否是同步赛道
   if (newCallbackPriority === SyncLane) {
-    // TODO
+    // 表示同步调度的回调
+    scheduleSyncCallback(performSyncWorkOnRoot.bind(null, root));
+    // 同步任务执行结束后，利用微任务的特征，来进行状态清除
+    // 表示同步执行结束后 要求异步来进行commit
+    queueMicrotask(flushSyncCallbacks);
   } else {
     // 此变量定义 调度等级
     let schedulerPriorityLevel;
@@ -151,6 +159,24 @@ export function ensureRootIsScheduled(root) {
       performConcurrentWorkOnRoot.bind(null, root),
     );
   }
+}
+
+/**
+ * 在root节点上 执行同步工作的
+ *
+ * @author lihh
+ * @param root root 根节点
+ */
+function performSyncWorkOnRoot(root) {
+  const lanes = getNextLanes(root);
+  // 以同步的方式进行渲染
+  renderRootSync(root, lanes);
+
+  // 完成的工作
+  const finishedWork = root.current.alternate;
+  root.finishedWork = finishedWork;
+  commitRoot(root);
+  return null;
 }
 
 /**

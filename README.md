@@ -17,11 +17,14 @@
 - [x] 实现 useEffect 逻辑
 - [x] 实现 useLayoutEffect逻辑
 - [x] 实现 异步调度
-- [ ] 实现 lane模型初次渲染
+- [x] 实现 lane模型初次渲染
+- [x] 实现 lane 模型的更新渲染
 - [ ] 实现 并发渲染
 - [ ] 实现 useRef 逻辑
 - [ ] 实现 useContext 逻辑
 - [ ] 实现 类组件的逻辑
+- [ ] 实现 useMemo
+- [ ] 实现 useCallback
 
 ## 面试题
 
@@ -67,4 +70,5 @@
 ![useLayoutEffect.png](images%2FuseLayoutEffect.png)
 
 ## 6. 赛道渲染 flow
+
 ![render-flow.png](images%2Frender-flow.png)
