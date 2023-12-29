@@ -456,17 +456,56 @@ function updateReducer(reducer) {
   return [hook.memoizedState, queue.dispatch];
 }
 
+/**
+ * 钩子hook函数 useRef的处理
+ *
+ * @author lihh
+ * @param initialValue 初期值
+ */
+function mountRef(initialValue) {
+  const hook = updateWorkInProgressHook();
+  let current = initialValue;
+
+  // 定义返回的ref
+  const ref = {
+    get current() {
+      return current;
+    },
+    set current(value) {
+      // 更新当前的值
+      current = value;
+    },
+  };
+
+  // 放到属性【memoizedState】字段上，方便更新的时候获取
+  hook.memoizedState = ref;
+  return ref;
+}
+
+/**
+ * 执行更新逻辑时 执行useRef的逻辑
+ *
+ * @author lihh
+ * @param initialValue 初期值 更新无用
+ */
+function updateRef(initialValue) {
+  const hook = updateWorkInProgressHook();
+  return hook.memoizedState;
+}
+
 const HooksDispatcherOnMountInDEV = {
   useReducer: mountReducer,
   useState: mountState,
   useEffect: mountEffect,
   useLayoutEffect: mountLayoutEffect,
+  useRef: mountRef,
 };
 const HooksDispatcherOnUpdateInDEV = {
   useReducer: updateReducer,
   useState: updateState,
   useEffect: updateEffect,
   useLayoutEffect: updateLayoutEffect,
+  useRef: updateRef,
 };
 
 /**

@@ -56,3 +56,16 @@ export function useLayoutEffect(create, deps) {
   // 调用派发器上的useLayoutEffect（挂载 以及更新时的派发器不同）
   return dispatcher.useLayoutEffect(create, deps);
 }
+
+/**
+ * 表示 useRef hook实现方式
+ *
+ * @author lihh
+ * @param initialValue 表示初期化的值
+ * @return {void|*}
+ */
+export function useRef(initialValue) {
+  const dispatcher = resolveDispatcher();
+  // 调用派发器上的useLayoutEffect（挂载 以及更新时的派发器不同）
+  return dispatcher.useRef(initialValue);
+}
