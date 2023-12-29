@@ -463,7 +463,7 @@ function updateReducer(reducer) {
  * @param initialValue 初期值
  */
 function mountRef(initialValue) {
-  const hook = updateWorkInProgressHook();
+  const hook = mountWorkInProgressHook();
   let current = initialValue;
 
   // 定义返回的ref

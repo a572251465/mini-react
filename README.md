@@ -26,7 +26,7 @@
 - [ ] 实现 useMemo
 - [ ] 实现 useCallback
 - [ ] 实现 createContext逻辑
-- [ ] 实现 ref引用
+- [x] 实现 ref引用（仅仅是HostComponent, 不包括ClassComponent）
 
 ## 面试题
 

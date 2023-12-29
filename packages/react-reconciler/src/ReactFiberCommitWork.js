@@ -10,6 +10,7 @@ import {
   Placement,
   Update,
   LayoutMask,
+  Ref,
 } from "react-reconciler/src/ReactFiberFlags";
 import {
   appendChild,
@@ -576,6 +577,41 @@ export function commitLayoutEffects(finishedWork, root) {
 }
 
 /**
+ * 提交设置ref
+ *
+ * @author lihh
+ * @param finishedWork 完成工作的work
+ */
+function commitAttachRef(finishedWork) {
+  const ref = finishedWork.ref;
+
+  // 判断ref 是否为null
+  if (ref !== null) {
+    // 拿到 dom节点
+    const instance = finishedWork.stateNode;
+    let instanceToUse;
+
+    // 此处源码经过转换的，这种写法只是为了跟源码保持高度一致的
+    switch (finishedWork.tag) {
+      default:
+        instanceToUse = instance;
+    }
+
+    ref.current = instanceToUse;
+  }
+}
+
+/**
+ * 安全的设置 ref的值
+ *
+ * @author lihh
+ * @param current 当前完成工作的fiber
+ */
+function safelyAttachRef(current) {
+  commitAttachRef(current);
+}
+
+/**
  * 在fiber上 提交layoutEffect
  *
  * @author lihh
@@ -595,6 +631,12 @@ function commitLayoutEffectOnFiber(finishedRoot, current, finishedWork) {
       if (!!(flags & Update)) {
         commitHookLayoutEffects(finishedWork, HookLayout | HookHasEffect);
       }
+      break;
+    }
+
+    case HostComponent: {
+      // 是否包含ref 标签
+      if (flags & Ref) safelyAttachRef(finishedWork);
       break;
     }
 

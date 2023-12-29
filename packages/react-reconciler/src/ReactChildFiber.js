@@ -104,6 +104,7 @@ export function createChildReconciler(shouldTrackSideEffects) {
 
     // 通过element 创建fiber 节点
     const created = createFiberFromElement(element);
+    created.ref = coerceRef(element);
     // 然后连接父子 fiber关系
     created.return = returnFiber;
     // 返回子节点
@@ -156,6 +157,7 @@ export function createChildReconciler(shouldTrackSideEffects) {
       switch (newChild.$$typeof) {
         case REACT_ELEMENT_TYPE: {
           const created = createFiberFromElement(newChild);
+          created.ref = coerceRef(newChild);
           created.return = returnFiber;
           return created;
         }
@@ -188,8 +190,21 @@ export function createChildReconciler(shouldTrackSideEffects) {
     }
 
     const created = createFiberFromElement(element);
+    created.ref = coerceRef(element);
     created.return = returnFiber;
     return created;
+  }
+
+  /**
+   * 为了跟源码保持一致 经过一些列的操作 返回ref的值
+   *
+   * @author lihh
+   * @param element react element
+   * @return {*}
+   */
+  function coerceRef(element) {
+    const mixedRef = element.ref;
+    return mixedRef;
   }
 
   /**

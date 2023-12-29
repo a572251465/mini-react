@@ -4,7 +4,7 @@ import {
   HostRoot,
   HostText,
 } from "react-reconciler/src/ReactWorkTags";
-import { NoFlags, Update } from "react-reconciler/src/ReactFiberFlags";
+import { NoFlags, Ref, Update } from "react-reconciler/src/ReactFiberFlags";
 import {
   appendInitialChild,
   createInstance,
@@ -21,6 +21,16 @@ import {
  */
 function markUpdate(workInProgress) {
   workInProgress.flags |= Update;
+}
+
+/**
+ * 用来标记是否包含属性【ref】
+ *
+ * @author lihh
+ * @param workInProgress 工作的fiber
+ */
+function markRef(workInProgress) {
+  workInProgress.flags |= Ref;
 }
 
 /**
@@ -121,6 +131,9 @@ export function completeWork(current, workInProgress) {
       // current !== null 是更新节点 因为如果是创建节点的话  current一定是空的
       if (current !== null && workInProgress.stateNode !== null) {
         updateHostComponent(current, workInProgress, type, newProps);
+
+        // 如果ref的值 发生变化了 重新标记
+        if (current.ref !== workInProgress.ref) markRef(workInProgress);
       } else {
         // 表示创建节点实例(其实就是通过type 来创建html 元素)
         const instance = createInstance(type, newProps, workInProgress);
@@ -130,6 +143,9 @@ export function completeWork(current, workInProgress) {
         workInProgress.stateNode = instance;
         // 最终初期化 children
         finalizeInitialChildren(instance, type, newProps);
+
+        // 表示 标记ref
+        if (workInProgress.ref !== null) markRef(workInProgress);
       }
 
       // 进行属性冒泡
