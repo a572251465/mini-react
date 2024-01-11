@@ -1,4 +1,4 @@
-import { REACT_ELEMENT_TYPE } from "shared/ReactSymbols";
+import { REACT_CONTEXT_TYPE, REACT_ELEMENT_TYPE } from "shared/ReactSymbols";
 import { isArray } from "shared/isArray";
 import {
   createFiberFromElement,
@@ -8,6 +8,7 @@ import {
 } from "react-reconciler/src/ReactFiber";
 import { ChildDeletion, Placement } from "react-reconciler/src/ReactFiberFlags";
 import { HostText } from "react-reconciler/src/ReactWorkTags";
+import { readContextDuringReconcilation } from "react-reconciler/src/ReactFiberNewContext";
 
 /**
  * 创建子元素 child 的调和
@@ -459,6 +460,13 @@ export function createChildReconciler(shouldTrackSideEffects) {
         case REACT_ELEMENT_TYPE: {
           return placeSingleChild(
             reconcileSingleElement(returnFiber, currentFirstChild, newChild),
+          );
+        }
+        case REACT_CONTEXT_TYPE: {
+          return reconcileChildFibers(
+            returnFiber,
+            currentFirstChild,
+            readContextDuringReconcilation(returnFiber, newChild),
           );
         }
         default:

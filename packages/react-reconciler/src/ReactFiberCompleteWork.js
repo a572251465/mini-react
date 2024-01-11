@@ -1,4 +1,6 @@
 import {
+  ContextConsumer,
+  ContextProvider,
   FunctionComponent,
   HostComponent,
   HostRoot,
@@ -12,6 +14,7 @@ import {
   finalizeInitialChildren,
   prepareUpdate,
 } from "react-dom-bindings/src/client/ReactDOMHostConfig";
+import { popProvider } from "react-reconciler/src/ReactFiberNewContext";
 
 /**
  * 标记 更新的fiber
@@ -153,12 +156,19 @@ export function completeWork(current, workInProgress) {
       break;
     }
     case FunctionComponent:
+    case ContextConsumer:
     case HostRoot:
       bubbleProperties(workInProgress);
       break;
     case HostText: {
-      const newText = newProps;
-      workInProgress.stateNode = createTextInstance(newText);
+      workInProgress.stateNode = createTextInstance(newProps);
+      bubbleProperties(workInProgress);
+      break;
+    }
+    case ContextProvider: {
+      // 拿到上下文
+      const context = workInProgress.type._context;
+      popProvider(context, workInProgress);
       bubbleProperties(workInProgress);
       break;
     }

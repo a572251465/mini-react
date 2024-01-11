@@ -560,6 +560,11 @@ export function commitMutationEffectsOnFiber(finishedWork, root) {
       commitUpdateEffects(finishedWork);
       break;
     }
+    default: {
+      recursivelyTraverseMutationEffects(root, finishedWork);
+      commitReconciliationEffects(finishedWork);
+      return;
+    }
   }
 }
 

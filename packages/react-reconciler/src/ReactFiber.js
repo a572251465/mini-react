@@ -1,10 +1,13 @@
 import { NoFlags } from "react-reconciler/src/ReactFiberFlags";
 import {
+  ContextConsumer,
+  ContextProvider,
   HostComponent,
   HostRoot,
   HostText,
   IndeterminateComponent,
 } from "react-reconciler/src/ReactWorkTags";
+import { REACT_CONTEXT_TYPE, REACT_PROVIDER_TYPE } from "shared/ReactSymbols";
 
 /**
  * 用来构建Fiber node 元素
@@ -137,7 +140,18 @@ export function createFiberFromTypeAndProps(type, key, pendingProps) {
   let fiberTag = IndeterminateComponent;
 
   // 判断是否是原生标签
-  if (typeof type === "string") fiberTag = HostComponent;
+  if (typeof type === "string") {
+    fiberTag = HostComponent;
+  } else if (type !== null && typeof type === "object") {
+    switch (type.$$typeof) {
+      case REACT_PROVIDER_TYPE:
+        fiberTag = ContextProvider;
+        break;
+      case REACT_CONTEXT_TYPE:
+        fiberTag = ContextConsumer;
+        break;
+    }
+  }
   const fiber = createFiber(fiberTag, pendingProps, key);
   fiber.type = type;
   return fiber;

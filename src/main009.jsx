@@ -1,19 +1,11 @@
 import { createRoot } from "react-dom/client";
-import { createContext, useState } from "react/src/React";
+import { createContext } from "react/src/React";
 
 const Context = createContext();
 
 function Button() {
-  const [number, setNumber] = useState(0);
   return (
-    <Context.Consumer>
-      {(text) => (
-        <div>
-          <p>{number}</p>
-          <button onClick={() => setNumber(number + 1)}>{text}</button>
-        </div>
-      )}
-    </Context.Consumer>
+    <Context.Consumer>{(text) => <button>{text}</button>}</Context.Consumer>
   );
 }
 

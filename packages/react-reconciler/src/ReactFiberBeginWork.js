@@ -1,5 +1,7 @@
 import {
   ClassComponent,
+  ContextConsumer,
+  ContextProvider,
   FunctionComponent,
   HostComponent,
   HostRoot,
@@ -16,6 +18,12 @@ import {
 } from "react-reconciler/src/ReactChildFiber";
 import { shouldSetTextContent } from "react-dom-bindings/src/client/ReactDOMHostConfig";
 import { renderWithHooks } from "react-reconciler/src/ReactFiberHooks";
+import {
+  prepareToReadContext,
+  pushProvider,
+  readContext,
+} from "react-reconciler/src/ReactFiberNewContext";
+import { PerformedWork } from "react-reconciler/src/ReactFiberFlags";
 
 /**
  * 调和 children
@@ -137,6 +145,60 @@ function updateFunctionComponent(
 }
 
 /**
+ * 更新 update context provider
+ *
+ * @author lihh
+ * @param current old root fiber
+ * @param workInProgress new root  fiber
+ * @param renderLanes 赛道
+ */
+function updateContextProvider(current, workInProgress, renderLanes) {
+  // provider 组件本身
+  const providerType = workInProgress.type;
+  // 拿到 context 上下文
+  const context = providerType._context;
+
+  const newProps = workInProgress.pendingProps;
+
+  // 拿到给 provider 设置的value值
+  const newValue = newProps.value;
+
+  // push 添加provider
+  pushProvider(workInProgress, context, newValue);
+
+  // 拿到 子类children
+  const newChildren = newProps.children;
+  reconcileChildren(current, workInProgress, newChildren, renderLanes);
+  return workInProgress.child;
+}
+
+/**
+ * 更新上下文的consumer
+ *
+ * @author lihh
+ * @param current old fiber
+ * @param workInProgress new fiber
+ * @param renderLanes 赛道
+ */
+function updateContextConsumer(current, workInProgress, renderLanes) {
+  // 拿到 provider consumer 上下文
+  const context = workInProgress.type;
+  const newProps = workInProgress.pendingProps;
+  // 其实就是子方法
+  const render = newProps.children;
+
+  prepareToReadContext(workInProgress);
+  // 从 context中读取值
+  const newValue = readContext(context);
+
+  // 开始执行 拿到子元素
+  const newChildren = render(newValue);
+  workInProgress.flags |= PerformedWork;
+  reconcileChildren(current, workInProgress, newChildren, renderLanes);
+  return workInProgress.child;
+}
+
+/**
  * 开始渲染工作
  *
  * @author lihh
@@ -180,6 +242,12 @@ export function beginWork(current, workInProgress, renderLanes) {
       return updateHostComponent(current, workInProgress, renderLanes);
     case HostRoot:
       return updateHostRoot(current, workInProgress, renderLanes);
+    case ContextProvider:
+      // 更新 provider 组件
+      return updateContextProvider(current, workInProgress, renderLanes);
+    case ContextConsumer:
+      // 更新 consumer 组件
+      return updateContextConsumer(current, workInProgress, renderLanes);
   }
 
   return null;

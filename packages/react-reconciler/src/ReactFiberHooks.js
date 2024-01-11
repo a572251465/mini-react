@@ -17,6 +17,7 @@ import {
   Passive as HookPassive,
   Layout as HookLayout,
 } from "./ReactHookEffectTags";
+import { readContext } from "react-reconciler/src/ReactFiberNewContext";
 
 let currentlyRenderingFiber = null;
 // 表示工作中的hook
@@ -147,6 +148,16 @@ function mountEffectImpl(fiberFlags, hookFlags, create, deps) {
     null,
     nextDeps,
   );
+}
+
+/**
+ * 定义useContext hooks
+ *
+ * @author lihh
+ * @param context 上下文
+ */
+function useContext(context) {
+  return readContext(context);
 }
 
 /**
@@ -499,6 +510,7 @@ const HooksDispatcherOnMountInDEV = {
   useEffect: mountEffect,
   useLayoutEffect: mountLayoutEffect,
   useRef: mountRef,
+  useContext,
 };
 const HooksDispatcherOnUpdateInDEV = {
   useReducer: updateReducer,
@@ -506,6 +518,7 @@ const HooksDispatcherOnUpdateInDEV = {
   useEffect: updateEffect,
   useLayoutEffect: updateLayoutEffect,
   useRef: updateRef,
+  useContext,
 };
 
 /**
