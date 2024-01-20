@@ -69,3 +69,15 @@ export function useRef(initialValue) {
   // 调用派发器上的useLayoutEffect（挂载 以及更新时的派发器不同）
   return dispatcher.useRef(initialValue);
 }
+
+/**
+ * memo hooks
+ *
+ * @author lihh
+ * @param create 创建需要依赖的方法
+ * @param deps 依赖的属性
+ */
+export function useMemo(create, deps) {
+  const dispatcher = resolveDispatcher();
+  return dispatcher.useMemo(create, deps);
+}

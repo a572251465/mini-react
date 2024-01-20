@@ -4,6 +4,7 @@ import {
   useEffect,
   useLayoutEffect,
   useRef,
+  useMemo,
 } from "./ReactHooks";
 import { ReactSharedInternals } from "./ReactSharedInternals";
 import { createContext } from "./ReactContext";

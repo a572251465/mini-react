@@ -332,6 +332,50 @@ function updateState(initialState) {
 }
 
 /**
+ * 挂载 memo hooks
+ *
+ * @author lihh
+ * @param nextCreate 表示下一个创建返回值
+ * @param deps 表示依赖
+ */
+function mountMemo(nextCreate, deps) {
+  // 拿到执行的hook
+  const hook = mountWorkInProgressHook();
+  // 依赖项
+  const nextDeps = deps === undefined ? null : deps;
+
+  const nextValue = nextCreate();
+  hook.memoizedState = [nextValue, nextDeps];
+  return nextValue;
+}
+
+/**
+ * 更新 memo hooks
+ *
+ * @author lihh
+ * @param nextCreate 返回方法，其返回值需要缓存
+ * @param deps 依赖项
+ */
+function updateMemo(nextCreate, deps) {
+  const hook = updateWorkInProgressHook();
+  const nextDeps = deps === undefined ? null : deps;
+
+  // 执行mount的时候 挂载的state
+  const prevState = hook.memoizedState;
+  if (nextDeps !== null) {
+    const prevDeps = prevState[1];
+    if (areHookInputsEqual(nextDeps, prevDeps)) {
+      return prevState[0];
+    }
+
+    // 重新执行 重新获取值
+    const nextValue = nextCreate();
+    hook.memoizedState = [nextValue, nextDeps];
+    return nextValue;
+  }
+}
+
+/**
  * useReducer 核心方法
  *
  * @author lihh
@@ -511,6 +555,7 @@ const HooksDispatcherOnMountInDEV = {
   useLayoutEffect: mountLayoutEffect,
   useRef: mountRef,
   useContext,
+  useMemo: mountMemo,
 };
 const HooksDispatcherOnUpdateInDEV = {
   useReducer: updateReducer,
@@ -519,6 +564,7 @@ const HooksDispatcherOnUpdateInDEV = {
   useLayoutEffect: updateLayoutEffect,
   useRef: updateRef,
   useContext,
+  useMemo: updateMemo,
 };
 
 /**
