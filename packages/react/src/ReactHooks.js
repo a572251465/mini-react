@@ -81,3 +81,16 @@ export function useMemo(create, deps) {
   const dispatcher = resolveDispatcher();
   return dispatcher.useMemo(create, deps);
 }
+
+/**
+ * back hooks
+ *
+ * @author lihh
+ * @param callback 回调方法
+ * @param deps 依赖项
+ * @return {*}
+ */
+export function useCallback(callback, deps) {
+  const dispatcher = resolveDispatcher();
+  return dispatcher.useCallback(callback, deps);
+}

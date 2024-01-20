@@ -548,6 +548,47 @@ function updateRef(initialValue) {
   return hook.memoizedState;
 }
 
+/**
+ * 挂载 callback 方法
+ *
+ * @author lihh
+ * @param callback callback 执行方法
+ * @param deps 依赖项
+ * @return {*}
+ */
+function mountCallback(callback, deps) {
+  const hook = mountWorkInProgressHook();
+  const nextDeps = deps === undefined ? null : deps;
+
+  hook.memoizedState = [callback, nextDeps];
+  return callback;
+}
+
+/**
+ * 更新 useCallback的方法
+ *
+ * @author lihh
+ * @param callback 执行的回调方法
+ * @param deps 依赖项
+ */
+function updateCallback(callback, deps) {
+  const hook = updateWorkInProgressHook();
+  const nextDeps = deps === undefined ? null : deps;
+  // 拿到上次 保存的state
+  const prevState = hook.memoizedState;
+
+  if (nextDeps !== null) {
+    const prevDep = prevState[1];
+    if (areHookInputsEqual(nextDeps, prevDeps)) {
+      return prevState[0];
+    }
+  }
+
+  // state中 保存新的值
+  hook.memoizedState = [callback, nextDeps];
+  return callback;
+}
+
 const HooksDispatcherOnMountInDEV = {
   useReducer: mountReducer,
   useState: mountState,
@@ -556,6 +597,7 @@ const HooksDispatcherOnMountInDEV = {
   useRef: mountRef,
   useContext,
   useMemo: mountMemo,
+  useCallback: mountCallback,
 };
 const HooksDispatcherOnUpdateInDEV = {
   useReducer: updateReducer,
@@ -565,6 +607,7 @@ const HooksDispatcherOnUpdateInDEV = {
   useRef: updateRef,
   useContext,
   useMemo: updateMemo,
+  useCallback: updateCallback,
 };
 
 /**
